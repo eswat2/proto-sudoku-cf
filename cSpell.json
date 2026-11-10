@@ -16,6 +16,7 @@
     "rlib",
     "rustup",
     "serde",
+    "tlsv",
     "wasm",
     "workerd",
     "wrangler"
