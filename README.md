@@ -31,7 +31,26 @@ the script only deploys a clean `main` that matches `origin/main`, and tags the 
 
 the first build installs `worker-build` and needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
-> there is no auto-deploy: Cloudflare Workers Builds was tried, but with no Rust cache it took 6-7 minutes per push. Local deploys take about 10-30 seconds.
+> there is no auto-deploy: Cloudflare Workers Builds was tried, but with no Rust cache it took 6-7 minutes per push. Local deploys take about 10-30 seconds (the first scripted deploy took 9 seconds).
+
+a deploy publishes to both hostnames:
+
+- **sudoku.eswat2.app** -- a Workers Custom Domain, set in `wrangler.jsonc` (`routes` with `custom_domain: true`). Cloudflare manages its DNS record and certificate, and every `wrangler deploy` re-applies it. A brand-new custom domain can take a few minutes before DNS answers.
+- **rust-sudoku-api.eswat2.workers.dev** -- kept on with `"workers_dev": true`.
+
+the page calls the api with the relative path `/api` (`platform="cloudflare"` in [proto-sudoku-wc][proto-sudoku-wc] 0.1.340+), so it works on either hostname.
+
+to check which commit is live:
+
+```
+npx wrangler deployments list
+```
+
+if a custom domain ever goes missing (for example after a deploy made with a token that can't edit the `eswat2.app` zone), re-attach it without redeploying code:
+
+```
+npx wrangler triggers deploy
+```
 
 ## routes:
 
