@@ -115,7 +115,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     </div>
     <h1>Sudoku API Workers Port</h1>
     <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–07 are done on the <code>cloudflare-workers</code> branch, and the API is live on workers.dev. <code>proto-sudoku-wc</code> 0.1.340 adds the <code>cloudflare</code> platform the page needs. What's left: bump the component, set <code>platform="cloudflare"</code>, redeploy, clean up and merge.</p>
-    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>live · cleanup and merge left</b></span></div>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>live · merge to main left</b></span></div>
   </header>
 
   <main>
@@ -370,7 +370,7 @@ open http://localhost:8787/</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 07 · ship</span><h2>Deploy and clean up</h2><span class="title">Ask before this step</span></div>
-        <div class="chips"><span class="chip warn">Live change</span><span class="chip pre">Deployed · cleanup left</span></div>
+        <div class="chips"><span class="chip warn">Live change</span><span class="chip ok">Done</span></div>
       </div>
       <p class="why">Deploying publishes the Worker at <b>rust-sudoku-api.&lt;subdomain&gt;.workers.dev</b>. After it works, delete the Heroku leftovers and update the README's usage section and badges.</p>
       <dl><dt>Remove</dt><dd><code>Procfile</code>, <code>app.json</code></dd><dt>README</dt><dd>Usage: <code>cargo run</code> → <code>npx wrangler dev</code>. Swap the <code>actix-cors</code> and <code>actix-web</code> badges (lines 7–8) for <code>worker</code>. Point the <code>[local]</code> and <code>[puzzle]</code> links (lines 81–82) at <code>localhost:8787</code> and add the workers.dev URL.</dd><dt>Also</dt><dd><code>cSpell.json</code> words</dd></dl>

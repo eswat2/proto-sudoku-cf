@@ -7,12 +7,25 @@
   // words - list of words to be always considered correct
   "words": [
     "actix",
-    "groot",
-    "nanos"
+    "cdylib",
+    "eswat",
+    "getrandom",
+    "jsonc",
+    "nanos",
+    "preflights",
+    "rlib",
+    "rustup",
+    "serde",
+    "wasm",
+    "workerd",
+    "wrangler"
   ],
   "ignorePaths": [
     "cSpell.json",
-    "target"
+    "Cargo.lock",
+    "target",
+    "build",
+    ".wrangler"
   ],
   // flagWords - list of words to be always considered incorrect
   // This is useful for offensive words and common spelling errors.

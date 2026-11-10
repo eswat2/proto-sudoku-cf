@@ -1,22 +1,42 @@
 # rust-api
 
-simple api server implemented in Rust...
+simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
+
+- [rust-sudoku-api.eswat2.workers.dev][live] -- _the page, using the [proto-sudoku-wc][proto-sudoku-wc] web component_
+- [rust-sudoku-api.eswat2.workers.dev/api/puzzle][live-puzzle] -- _the api_
 
 ## dependencies:
 
-[![actix-cors][badge-actix-cors]][actix-cors]
-[![actix-web][badge-actix-web]][actix-web]
+[![worker][badge-worker]][worker]
 [![base64][badge-base64]][base64]
 [![serde_json][badge-serde-json]][serde-json]
 [![sudoku][badge-sudoku]][sudoku]
-
+[![criterion][badge-criterion]][criterion]
 
 ## usage:
 
-`cargo run`
+`npx wrangler dev`
 
-- [localhost:8080][local]
-- [localhost:8080/api/puzzle][puzzle]
+- [localhost:8787][local]
+- [localhost:8787/api/puzzle][puzzle]
+
+to deploy:
+
+```
+npx wrangler deploy
+```
+
+the first build installs `worker-build` and needs the wasm target (`rustup target add wasm32-unknown-unknown`).
+
+## routes:
+
+| Route | Description |
+| :--- | :--- |
+| `/` | _`public/index.html`, served by Workers Static Assets_ |
+| `/api/puzzle` | _a new puzzle and its solution_ |
+| `/api/:name`, `/:name` | _`{"hello": name}`_ |
+
+every response carries permissive CORS headers, including 404s and `OPTIONS` preflights.
 
 ## output:
 
@@ -24,26 +44,41 @@ simple api server implemented in Rust...
 {
   "metrics": {
     "counts": {
-      "blanks": 56,
-      "clues": 25
-    },
-    "nanos": {
-      "generate": 278502,
-      "solve": 5358
+      "blanks": 52,
+      "clues": 29
     }
   },
   "puzzle": "51..6...28.2......6..3.8.9.4..9..8.........5.1564............192...9...8...54....",
-  "ref": "NTE5NzY0MzgyODMyMTU5NjQ3Njc0MzI4MTk1NDI3OTM1ODYxOTgzMjE2NzU0MTU2NDg3OTIzMzY1ODcyNDE5MjQxNjkzNTc4Nzk4NTQxMjM2"
+  "ref": "NTE5NzY0MzgyODMyMTU5NjQ3Njc0MzI4MTk1NDI3OTM1ODYxOTgzMjE2NzU0MTU2NDg3OTIzMzY1ODcyNDE5MjQxNjkzNTc4Nzk4NTQxMjM2",
+  "tag": "cloudflare"
 }
 ```
 
 | Property | Description |
 | ---: | :--- |
-| **metrics** | _insight into the puzzle counts & times_ |
+| **metrics** | _insight into the puzzle counts_ |
 | **puzzle** | _a string representing the puzzle board (dots are blank cells)_ |
 | **ref** | _the base64 encoded solution to the puzzle_ |
+| **tag** | _the platform serving the api_ |
+
+> `metrics.nanos` was dropped in the Workers port: Workers freezes the clock while code runs, so timings always read 0. Use `cargo bench` instead.
+
+## benchmarks:
+
+```
+cargo bench
+```
+
+times `generate`, `solve` and `new_puzzle` natively with [criterion][criterion] (`benches/puzzle.rs`). native is typically 1.5-3x faster than the wasm build Workers runs.
 
 ## developer notes:
+
+to update the web component version in `public/index.html`:
+
+```
+nx
+bash .wc-loader
+```
 
 to check for updates:
 
@@ -59,34 +94,38 @@ cargo update
 
 ## references:
 
+- [workers-rs][workers-rs] - _Rust SDK for Cloudflare Workers_
 - [cargo-outdated][out-dated] - _new cargo subcommand_
 - [cargo-update][up-date] - _update dependencies_
+- [docs/cloudflare-port.html](docs/cloudflare-port.html) - _the runbook for the Actix → Workers port_
 
 ## status:
 
-This code has been "deprecated" since Heroku is removing it's free tier in November 2022.
+Heroku's free tier ended in November 2022, and the Actix version of this repo became local-only. In November 2026 it was ported to Cloudflare Workers.
 
-> This repo is now primarily for local development.
+The serverless version on Vercel is still running...
 
-The new API is now serverless and running on Vercel...
-
-- [puzzle][puzzle-io] -- _serverless_
+- [puzzle][puzzle-io] -- _vercel_
 
 
-[actix-cors]: https://crates.io/crates/actix-cors
-[actix-web]: https://crates.io/crates/actix-web
+[live]: https://rust-sudoku-api.eswat2.workers.dev
+[live-puzzle]: https://rust-sudoku-api.eswat2.workers.dev/api/puzzle
+[proto-sudoku-wc]: https://www.npmjs.com/package/proto-sudoku-wc
+[workers-rs]: https://github.com/cloudflare/workers-rs
+[worker]: https://crates.io/crates/worker
 [base64]: https://crates.io/crates/base64
 [serde-json]: https://crates.io/crates/serde_json
 [sudoku]: https://crates.io/crates/sudoku
-[local]: http://0.0.0.0:8080
-[puzzle]: http://0.0.0.0:8080/api/puzzle
+[criterion]: https://crates.io/crates/criterion
+[local]: http://localhost:8787
+[puzzle]: http://localhost:8787/api/puzzle
 [puzzle-io]: https://sudoku-rust-api.vercel.app/api/puzzle
 
 [out-dated]: https://github.com/kbknapp/cargo-outdated
 [up-date]: https://doc.rust-lang.org/cargo/commands/cargo-update.html
 
-[badge-actix-cors]: https://img.shields.io/badge/crates.io-actix--cors-orange
-[badge-actix-web]: https://img.shields.io/badge/crates.io-actix--web-orange
+[badge-worker]: https://img.shields.io/badge/crates.io-worker-orange
 [badge-base64]: https://img.shields.io/badge/crates.io-base64-orange
 [badge-serde-json]: https://img.shields.io/badge/crates.io-serde__json-orange
 [badge-sudoku]: https://img.shields.io/badge/crates.io-sudoku-orange
+[badge-criterion]: https://img.shields.io/badge/crates.io-criterion-orange
