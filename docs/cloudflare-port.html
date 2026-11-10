@@ -115,7 +115,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     </div>
     <h1>Sudoku API Workers Port</h1>
     <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–07 are done on the <code>cloudflare-workers</code> branch, and the API is live on workers.dev. <code>proto-sudoku-wc</code> 0.1.340 adds the <code>cloudflare</code> platform the page needs. What's left: bump the component, set <code>platform="cloudflare"</code>, redeploy, clean up and merge.</p>
-    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>API live · page pending</b></span></div>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>live · cleanup and merge left</b></span></div>
   </header>
 
   <main>
@@ -385,14 +385,17 @@ git rm Procfile app.json</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 08 · page</span><h2>Point the page at the Worker</h2><span class="title">Needs proto-sudoku-wc 0.1.340 on npm</span></div>
-        <div class="chips"><span class="chip pre">In progress</span></div>
+        <div class="chips"><span class="chip ok">Deployed</span></div>
       </div>
-      <p class="why">The component change shipped as <b>proto-sudoku-wc 0.1.340</b>. A tag push runs that repo's <code>publish.yml</code>, which publishes to npm. Once npm has it, <code>.wc-loader</code> bumps the pinned version. Then set the platform in both copies of the page and redeploy.</p>
+      <p class="why">The component change shipped as <b>proto-sudoku-wc 0.1.340</b>. A tag push runs that repo's <code>publish.yml</code>, which publishes to npm. Once npm has it, set the platform, refresh the cache with <code>nx</code> and run <code>.wc-loader</code> to bump the pin, then redeploy. Run it with <b><code>bash .wc-loader</code></b>, because the file isn't executable. It runs <code>git commit -a</code>, so <b>commit other edits first</b> or they end up in the bump commit.</p>
       <dl><dt>Repo</dt><dd><code>~/github/ionic/proto-sudoku-wc</code> · <code>f9543c9</code>, released as tag <code>v0.1.340</code> (<code>212b37a</code>)</dd><dt>store.ts</dt><dd><code>platformPrefix.cloudflare = '/api'</code></dd><dt>types.ts</dt><dd><code>metrics.nanos</code> is optional</dd><dt>CLAUDE.md</dt><dd>yarn → pnpm. Release scripts documented (<code>pnpm bump</code> pushes a tag immediately). Cloudflare backend listed.</dd></dl>
       <div class="msg">
         <pre class="code" id="s8">npm view proto-sudoku-wc version     # wait for 0.1.340
-./.wc-loader                          # bumps the pin, commits and pushes
 sed -i '' 's/platform="local"/platform="cloudflare"/' .template.html public/index.html
+git commit -am "page: platform=cloudflare"
+git push -u origin cloudflare-workers  # .wc-loader's push needs an upstream
+nx                                    # refresh ~/github/.wc-cache.json from ~/github/ionic
+bash .wc-loader                       # not executable; bumps the pin, commits -a, pushes
 npx wrangler deploy
 open https://rust-sudoku-api.eswat2.workers.dev/</pre>
         <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s8">Copy commands</button></div>
