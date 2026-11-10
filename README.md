@@ -28,6 +28,8 @@ npx wrangler deploy
 
 the first build installs `worker-build` and needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
+pushes to `main` deploy automatically through Cloudflare Workers Builds, which runs `bash scripts/cf-build.sh deploy` (other branches run `preview`, which uploads a version without promoting it). The build image has no Rust, so the script installs it first. `bash scripts/cf-build.sh check` runs the same build locally with `wrangler deploy --dry-run`.
+
 ## routes:
 
 | Route | Description |
