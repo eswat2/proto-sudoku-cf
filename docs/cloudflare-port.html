@@ -114,8 +114,8 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
       </div>
     </div>
     <h1>Sudoku API Workers Port</h1>
-    <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–06 are done on the <code>cloudflare-workers</code> branch and pass locally. Deploying is next.</p>
-    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Status <b>steps 01–06 done locally</b></span></div>
+    <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–07 are done on the <code>cloudflare-workers</code> branch, and the API is live on workers.dev. <code>proto-sudoku-wc</code> 0.1.340 adds the <code>cloudflare</code> platform the page needs. What's left: bump the component, set <code>platform="cloudflare"</code>, redeploy, clean up and merge.</p>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>API live · page pending</b></span></div>
   </header>
 
   <main>
@@ -144,13 +144,14 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
   <section class="card" aria-label="Decisions">
     <div class="card-head">
       <div class="who"><span class="order">Before step 01</span><h2>Decisions</h2><span class="title">What's settled and what's still yours</span></div>
-      <div class="chips"><span class="chip pre">2 open</span></div>
+      <div class="chips"><span class="chip ok">All settled</span></div>
     </div>
     <ul class="reqs">
       <li><span class="req">Workers (WebAssembly), not Containers</span><span class="chip ok">Settled</span><span class="ev">It runs free, scales to zero and has no cold start. <code>cargo bench</code> puts a full puzzle (generate + solve) at about 82 µs natively, or roughly 0.25 ms at a pessimistic 3× for wasm, well inside the free plan's 10 ms of CPU per request. Containers stay as the fallback (see the last card).</span></li>
       <li><span class="req">Port this repo, not sudoku-rust-api</span><span class="chip ok">Settled</span><span class="ev">This repo is already on <code>sudoku</code> 0.8 / <code>rand</code> 0.8 / <code>base64</code> 0.22. The Vercel repo is on <code>rand</code> 0.5 and would need those upgrades first.</span></li>
-      <li><span class="req"><code>metrics.nanos</code> removed; timings move to <code>cargo bench</code></span><span class="chip ok">Settled</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The response now has only <code>metrics.counts</code>. <code>benches/puzzle.rs</code> (Criterion) times <code>generate</code>, <code>solve</code> and <code>new_puzzle</code> natively. Native times were about 80 µs, 2 µs and 82 µs on 2026-11-10.</span></li>
-      <li><span class="req">The <code>platform</code> attribute in <code>index.html</code></span><span class="chip warn">Needs a component change</span><span class="ev">Checked in <code>proto-sudoku-wc</code> 0.1.339 (<code>utils/store.js</code>): it knows only <code>local</code> → <code>http://localhost:8080/api</code>, <code>netlify</code> → <code>/.netlify/functions</code> and <code>vercel</code> → <code>https://sudoku-rust-api.vercel.app/api</code>. Any other value falls back to Vercel. <b>No value calls the page's own <code>/api</code></b>, so the deployed page will call another server until the component gets a <code>cloudflare: '/api'</code> entry. It sends <code>X-Requested-With</code> and <code>X-Custom-Header</code>, so cross-origin calls need the CORS preflight.</span></li>
+      <li><span class="req"><code>metrics.nanos</code> removed; timings move to <code>cargo bench</code></span><span class="chip ok">Settled</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The response now has only <code>metrics.counts</code>. The component's <code>PuzzleApiData</code> type marks <code>nanos</code> optional as of 0.1.340, and it only ever read <code>puzzle</code> and <code>ref</code>. <code>benches/puzzle.rs</code> (Criterion) times <code>generate</code>, <code>solve</code> and <code>new_puzzle</code> natively. Native times were about 80 µs, 2 µs and 82 µs on 2026-11-10.</span></li>
+      <li><span class="req">The page calls its own origin: <code>platform="cloudflare"</code></span><span class="chip ok">Settled</span><span class="ev"><code>proto-sudoku-wc</code> 0.1.339 knew only <code>local</code> (<code>http://localhost:8080/api</code>), <code>netlify</code> and <code>vercel</code>, and fell back to Vercel for anything else. <b>0.1.340 adds <code>cloudflare: '/api'</code></b> in <code>src/utils/store.ts</code>. The path is relative, so it follows whatever host serves the page, including a custom domain later. The component sends <code>X-Requested-With</code> and <code>X-Custom-Header</code>, so cross-origin callers still rely on the CORS preflight.</span></li>
+      <li><span class="req">Keep the pinned CDN version, not <code>@latest</code></span><span class="chip ok">Settled</span><span class="ev">The page keeps loading an exact version from jsDelivr (<code>proto-sudoku-wc@0.1.340</code>), and <code>.wc-loader</code> keeps bumping it. Stencil's entry file lazy-loads hashed chunks through the same URL, and jsDelivr caches <code>@latest</code> per file, so <b>after a release the entry file and chunks can come from different versions and fail to load</b>. A pin also gives a review step, a one-line rollback and a commit history of what was served. If running <code>.wc-loader</code> by hand gets old, automate it rather than unpin.</span></li>
     </ul>
   </section>
 
@@ -188,6 +189,10 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
       <li><input type="checkbox" id="s7-remove" disabled><label for="s7-remove"><code>Procfile</code> and <code>app.json</code> removed</label><span class="chip warn">Ask first</span><span class="cnote" hidden></span></li>
       <li><input type="checkbox" id="s7-readme" disabled><label for="s7-readme">README usage, badges and links updated, plus <code>cSpell.json</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
       <li><input type="checkbox" id="s7-merge" disabled><label for="s7-merge"><code>cloudflare-workers</code> merged into <code>main</code></label><span class="chip warn">Your call</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 08 · page</li>
+      <li><input type="checkbox" id="s8-release" disabled><label for="s8-release"><code>proto-sudoku-wc</code> 0.1.340 released with <code>cloudflare: '/api'</code></label><span class="chip quiet">Component</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s8-bump" disabled><label for="s8-bump"><code>.wc-loader</code> bumps the pin to 0.1.340</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s8-redeploy" disabled><label for="s8-redeploy">Redeployed. The workers.dev page loads a puzzle from its own <code>/api</code></label><span class="chip warn">Live change</span><span class="cnote" hidden></span></li>
     </ul>
     <p class="cl-status" id="cl-status"></p>
   </section>
@@ -196,7 +201,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 01 · prep</span><h2>Branch and toolchain</h2><span class="title">The wasm target isn't installed yet</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why">Only <code>aarch64-apple-darwin</code> is installed, and Wrangler isn't installed globally, so run it through <code>npx</code>. The build command in step 05 installs <b>worker-build</b>, which compiles the crate and generates the JavaScript wrapper.</p>
       <div class="msg">
@@ -211,7 +216,7 @@ npx wrangler login</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 02 · Cargo.toml</span><h2>Swap Actix for worker</h2><span class="title">A library crate compiled to cdylib</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why">Remove <code>actix-web</code>, <code>actix-cors</code> and <code>actix-files</code>. <b><code>getrandom</code> needs the <code>js</code> feature</b> or <code>rand</code> won't build for WebAssembly. <code>sudoku</code> 0.8 pulls in <code>rand</code> 0.8, which uses <code>getrandom</code> 0.2. Today the lockfile also has <code>getrandom</code> 0.4, but only through <code>actix-http</code>, so it disappears with Actix. Confirm that with <code>cargo tree -i getrandom</code>. The new file also moves from <code>edition = "2018"</code> to 2021 and drops <code>authors</code>. Neither is needed for the port, so keep <code>authors</code> if you want it.</p>
       <div class="msg">
@@ -240,7 +245,7 @@ lto = true</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 03 · src/lib.rs</span><h2>Rewrite the handlers</h2><span class="title">Replaces src/main.rs</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why">The puzzle logic is the same, minus the timers and the <code>println!</code>. <code>fetch</code> adds CORS headers to <b>every response, the router's 404s included</b>, which is what <code>Cors::permissive()</code> did. Delete <code>src/main.rs</code>. You don't need a <code>/</code> route, because Static Assets serves <code>index.html</code> before the Worker runs.</p>
       <dl><dt>Routes</dt><dd><code>/api/puzzle</code> · <code>/api/:name</code> · <code>/:name</code> · OPTIONS on any path</dd><dt>Tag</dt><dd><code>"cloudflare"</code> (was <code>"platform"</code>)</dd></dl>
@@ -309,10 +314,10 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -&gt; Result&lt;Response&g
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 04 · static page</span><h2>Move index.html to public/</h2><span class="title">And update the script that regenerates it</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why"><code>.wc-loader</code> rebuilds <code>index.html</code> from <code>.template.html</code> by bumping web-component versions (<code>.update</code> is a symlink to it). Its last copy step writes to the repo root, so <b>point it at <code>public/index.html</code></b> or the next bump will recreate the old file.</p>
-      <dl><dt>.wc-loader</dt><dd>Line 72: <code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code>. <code>.update</code> follows, since it's a symlink.</dd><dt>Template</dt><dd>Set the <code>platform</code> attribute in <code>.template.html</code> once you've confirmed the value (see Decisions)</dd></dl>
+      <dl><dt>.wc-loader</dt><dd>Line 72: <code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code>. <code>.update</code> follows, since it's a symlink.</dd><dt>Template</dt><dd>Left as <code>platform="local"</code> until the component supports Cloudflare. Changed in step 08.</dd></dl>
       <div class="msg">
         <pre class="code" id="s4">mkdir -p public
 git mv index.html public/index.html
@@ -324,7 +329,7 @@ git rm src/main.rs</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 05 · wrangler.jsonc</span><h2>Worker config</h2><span class="title">Build hook plus static assets</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why">Check <b><code>main</code> against the workers-rs template</b>: recent <code>worker-build</code> versions output <code>build/index.js</code>, and older ones output <code>build/worker/shim.mjs</code>. Also add <b><code>build/</code> and <code>.wrangler/</code></b> to <code>.gitignore</code>. <code>wrangler dev</code> creates <code>.wrangler/</code> for its local state, and today the file only ignores <code>/target</code>.</p>
       <div class="msg">
@@ -344,7 +349,7 @@ git rm src/main.rs</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 06 · local test</span><h2>Run it with wrangler dev</h2><span class="title">Replaces cargo run on :8080</span></div>
-        <div class="chips"><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip ok">Done</span></div>
       </div>
       <p class="why">Check all four routes and the CORS preflight. Decode <code>ref</code> and confirm it's an 81-digit solution that agrees with every clue in <code>puzzle</code>. Every request makes a new puzzle, so <b>save one response</b> and read both fields from it.</p>
       <div class="msg">
@@ -365,7 +370,7 @@ open http://localhost:8787/</pre>
     <article class="card">
       <div class="card-head">
         <div class="who"><span class="order">Step 07 · ship</span><h2>Deploy and clean up</h2><span class="title">Ask before this step</span></div>
-        <div class="chips"><span class="chip warn">Live change</span><span class="chip quiet">Not started</span></div>
+        <div class="chips"><span class="chip warn">Live change</span><span class="chip pre">Deployed · cleanup left</span></div>
       </div>
       <p class="why">Deploying publishes the Worker at <b>rust-sudoku-api.&lt;subdomain&gt;.workers.dev</b>. After it works, delete the Heroku leftovers and update the README's usage section and badges.</p>
       <dl><dt>Remove</dt><dd><code>Procfile</code>, <code>app.json</code></dd><dt>README</dt><dd>Usage: <code>cargo run</code> → <code>npx wrangler dev</code>. Swap the <code>actix-cors</code> and <code>actix-web</code> badges (lines 7–8) for <code>worker</code>. Point the <code>[local]</code> and <code>[puzzle]</code> links (lines 81–82) at <code>localhost:8787</code> and add the workers.dev URL.</dd><dt>Also</dt><dd><code>cSpell.json</code> words</dd></dl>
@@ -374,6 +379,23 @@ open http://localhost:8787/</pre>
 curl -s https://rust-sudoku-api.&lt;subdomain&gt;.workers.dev/api/puzzle | jq .tag
 git rm Procfile app.json</pre>
         <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s7">Copy commands</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 08 · page</span><h2>Point the page at the Worker</h2><span class="title">Needs proto-sudoku-wc 0.1.340 on npm</span></div>
+        <div class="chips"><span class="chip pre">In progress</span></div>
+      </div>
+      <p class="why">The component change shipped as <b>proto-sudoku-wc 0.1.340</b>. A tag push runs that repo's <code>publish.yml</code>, which publishes to npm. Once npm has it, <code>.wc-loader</code> bumps the pinned version. Then set the platform in both copies of the page and redeploy.</p>
+      <dl><dt>Repo</dt><dd><code>~/github/ionic/proto-sudoku-wc</code> · <code>f9543c9</code>, released as tag <code>v0.1.340</code> (<code>212b37a</code>)</dd><dt>store.ts</dt><dd><code>platformPrefix.cloudflare = '/api'</code></dd><dt>types.ts</dt><dd><code>metrics.nanos</code> is optional</dd><dt>CLAUDE.md</dt><dd>yarn → pnpm. Release scripts documented (<code>pnpm bump</code> pushes a tag immediately). Cloudflare backend listed.</dd></dl>
+      <div class="msg">
+        <pre class="code" id="s8">npm view proto-sudoku-wc version     # wait for 0.1.340
+./.wc-loader                          # bumps the pin, commits and pushes
+sed -i '' 's/platform="local"/platform="cloudflare"/' .template.html public/index.html
+npx wrangler deploy
+open https://rust-sudoku-api.eswat2.workers.dev/</pre>
+        <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s8">Copy commands</button></div>
       </div>
     </article>
   </section>
@@ -399,7 +421,7 @@ git rm Procfile app.json</pre>
 
   </main>
 
-  <footer>Written after comparing the Vercel deployment (eswat2/sudoku-rust-api, vercel_lambda) with this local Actix server. Sources: both repos' Cargo.toml, Cargo.lock and source; workers-rs and Workers Static Assets docs. Check crate and template versions at the time of the port.</footer>
+  <footer>Written after comparing the Vercel deployment (eswat2/sudoku-rust-api, vercel_lambda) with this local Actix server. Sources: both repos' Cargo.toml, proto-sudoku-wc's <code>src/utils/store.ts</code>, Cargo.lock and source; workers-rs and Workers Static Assets docs. Check crate and template versions at the time of the port.</footer>
 </div>
 
 <script>
