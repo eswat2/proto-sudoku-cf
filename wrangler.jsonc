@@ -5,5 +5,9 @@
   "build": {
     "command": "cargo install -q \"worker-build@^0.8\" && worker-build --release"
   },
-  "assets": { "directory": "./public" }
+  "assets": { "directory": "./public" },
+  // custom domain: Cloudflare creates the DNS record + certificate
+  "routes": [{ "pattern": "sudoku.eswat2.app", "custom_domain": true }],
+  // keep rust-sudoku-api.eswat2.workers.dev working alongside it
+  "workers_dev": true
 }

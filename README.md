@@ -2,8 +2,9 @@
 
 simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
 
-- [rust-sudoku-api.eswat2.workers.dev][live] -- _the page, using the [proto-sudoku-wc][proto-sudoku-wc] web component_
-- [rust-sudoku-api.eswat2.workers.dev/api/puzzle][live-puzzle] -- _the api_
+- [sudoku.eswat2.app][app] -- _the page, using the [proto-sudoku-wc][proto-sudoku-wc] web component_
+- [sudoku.eswat2.app/api/puzzle][app-puzzle] -- _the api_
+- also on [rust-sudoku-api.eswat2.workers.dev][live] ([api][live-puzzle])
 
 ## dependencies:
 
@@ -110,6 +111,8 @@ The serverless version on Vercel is still running...
 - [puzzle][puzzle-io] -- _vercel_
 
 
+[app]: https://sudoku.eswat2.app
+[app-puzzle]: https://sudoku.eswat2.app/api/puzzle
 [live]: https://rust-sudoku-api.eswat2.workers.dev
 [live-puzzle]: https://rust-sudoku-api.eswat2.workers.dev/api/puzzle
 [proto-sudoku-wc]: https://www.npmjs.com/package/proto-sudoku-wc
