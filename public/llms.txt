@@ -1,15 +1,18 @@
 # proto-sudoku
 
-Classic 9x9 sudoku in the browser, by Richard Hess. Single player. No
-accounts, no signup step and no key.
+> Classic 9x9 sudoku in the browser, by Richard Hess. Single player. No
+> accounts, no signup step and no key. Puzzles come from a Rust API compiled
+> to WebAssembly on Cloudflare Workers.
 
-Live app: https://sudoku.eswat2.app
-About: https://sudoku.eswat2.app/about
-Architecture: https://sudoku.eswat2.app/architecture
+The page at / is a web component ([proto-sudoku-wc](https://www.npmjs.com/package/proto-sudoku-wc)
+on npm) and renders nothing useful without JavaScript. Use this file or the
+API instead of scraping it.
 
-The page at / is a web component (proto-sudoku-wc, on npm) and renders
-nothing useful without JavaScript. Use this file or the API instead of
-scraping it.
+## Pages
+
+- [Play](https://sudoku.eswat2.app/): the game
+- [About](https://sudoku.eswat2.app/about): how to play, with screenshots
+- [Architecture](https://sudoku.eswat2.app/architecture): how it's built, layer by layer
 
 ## How it works
 
@@ -21,10 +24,8 @@ scraping it.
 
 ## API
 
-GET https://sudoku.eswat2.app/api/puzzle
-
-Returns a new puzzle with a unique solution on every call. CORS is open to
-any origin.
+- [GET /api/puzzle](https://sudoku.eswat2.app/api/puzzle): a new puzzle with a
+  unique solution on every call. CORS is open to any origin.
 
 ```
 {
@@ -41,6 +42,6 @@ any origin.
 - metrics.counts: the number of blanks and clues.
 - tag: the platform that served the response.
 
-## Part of
+## Optional
 
-eswat2.app, small apps by Richard Hess: https://eswat2.app
+- [eswat2.app](https://eswat2.app): small apps by Richard Hess
