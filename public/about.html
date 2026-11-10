@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About proto-sudoku</title>
+<meta name="description" content="proto-sudoku on Cloudflare: classic 9×9 sudoku in the browser, with fresh puzzles from a Rust API compiled to WebAssembly. No accounts and no key.">
+<link rel="canonical" href="https://sudoku.eswat2.app/about">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>
+(function(){try{var s=localStorage.getItem("outreach-theme");if(s==="light"||s==="dark")document.documentElement.setAttribute("data-theme",s)}catch(e){}})();
+</script>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(255, 90, 79, 0.13), transparent);
+    --panel: #12161f;
+    --panel-2: #171c26;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text: #e7ebf3;
+    --text-dim: #8b93a7;
+    --text-faint: #5b6178;
+    --accent: #ff6b5e;
+    --accent-soft: rgba(255, 107, 94, 0.16);
+    --accent-2: #ffd43b;
+    --accent-2-soft: rgba(255, 212, 59, 0.16);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --max: 1080px;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f5fa;
+    --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+    --panel: #ffffff;
+    --panel-2: #eceff6;
+    --border: rgba(20, 22, 40, 0.09);
+    --border-strong: rgba(20, 22, 40, 0.16);
+    --text: #191c28;
+    --text-dim: #565c72;
+    --text-faint: #8a90a4;
+    --accent: #d0392e;
+    --accent-soft: rgba(208, 57, 46, 0.10);
+    --accent-2: #9a7400;
+    --accent-2-soft: rgba(154, 116, 0, 0.12);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5fa;
+      --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+      --panel: #ffffff;
+      --panel-2: #eceff6;
+      --border: rgba(20, 22, 40, 0.09);
+      --border-strong: rgba(20, 22, 40, 0.16);
+      --text: #191c28;
+      --text-dim: #565c72;
+      --text-faint: #8a90a4;
+      --accent: #d0392e;
+      --accent-soft: rgba(208, 57, 46, 0.10);
+      --accent-2: #9a7400;
+      --accent-2-soft: rgba(154, 116, 0, 0.12);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg) var(--bg-glow);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ---------- header ---------- */
+
+  header.site {
+    padding: 1.75rem 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+
+  .brand .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 12px 1px var(--accent-2-soft);
+  }
+
+  header.site .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gh-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border: 1px solid var(--border-strong);
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .gh-link:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .gh-link svg { width: 15px; height: 15px; flex: none; }
+
+  /* ---------- hero ---------- */
+
+  .hero {
+    padding: 3.75rem 0 4.5rem;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(255, 107, 94, 0.28);
+    display: inline-block;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    margin-bottom: 1.1rem;
+  }
+
+  h1.headline {
+    font-size: clamp(2.1rem, 4.4vw, 3.15rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    margin: 0 0 1.05rem;
+    text-wrap: balance;
+  }
+
+  h1.headline em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--accent), #ff9f43 55%, var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sub {
+    color: var(--text-dim);
+    font-size: 1.08rem;
+    line-height: 1.6;
+    max-width: 46ch;
+    margin: 0 0 2rem;
+  }
+
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: linear-gradient(100deg, var(--accent), #ff9f43);
+    color: #0b0e14;
+    font-weight: 700;
+    font-size: 0.96rem;
+    text-decoration: none;
+    padding: 0.8rem 1.3rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 30px -10px rgba(255, 107, 94, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -8px rgba(255, 107, 94, 0.6); }
+  .btn-primary svg { width: 17px; height: 17px; }
+
+  .meta-note {
+    font-size: 0.85rem;
+    color: var(--text-faint);
+  }
+
+  /* hero card visual */
+  .hero-visual {
+    position: relative;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .box-stack { position: relative; width: 228px; height: 228px; }
+
+  .box {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+    border-radius: 18px;
+    border: 1px solid var(--border-strong);
+    background: var(--panel-2);
+  }
+
+  .box.back-a { transform: rotate(-12deg) translate(-30px, 12px); opacity: 0.45; }
+  .box.back-b { transform: rotate(9deg) translate(28px, 18px); opacity: 0.6; }
+
+  .box span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    font-weight: 800;
+    font-size: 1.75rem;
+    color: var(--text-faint);
+  }
+
+  .box.front {
+    box-shadow: 0 24px 60px -18px rgba(255, 107, 94, 0.55);
+    animation: float 5s ease-in-out infinite;
+  }
+
+  .box.front span { color: var(--text); }
+  .box.front span.blank { background: var(--panel-2); }
+  .box.front span.pick {
+    background: linear-gradient(160deg, var(--accent), #ff9f43);
+    color: #0b0e14;
+    font-size: 2.2rem;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .box.front { animation: none; }
+  }
+
+  /* ---------- section shell ---------- */
+
+  section { padding: 3.25rem 0; }
+
+  .section-head {
+    max-width: 56ch;
+    margin: 0 0 2.25rem;
+  }
+
+  .section-head h2 {
+    font-size: 1.7rem;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.6rem;
+    text-wrap: balance;
+  }
+
+  .section-head p {
+    color: var(--text-dim);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ---------- walkthrough ---------- */
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .step figure {
+    margin: 1.1rem 1.1rem 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .step img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center top;
+    display: block;
+  }
+
+  .step-body {
+    padding: 1.15rem 1.3rem 1.4rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .step-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    color: var(--accent-2);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-tag .suit { font-size: 0.95rem; }
+
+  .step h3 {
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.01em;
+  }
+
+  .step p {
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ---------- features ---------- */
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+
+  .feature {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1.15rem 1.1rem;
+  }
+
+  .feature .suit {
+    font-size: 1.3rem;
+    display: block;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+  }
+
+  .feature h4 {
+    font-size: 0.92rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.01em;
+  }
+
+  .feature p {
+    font-size: 0.83rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ---------- spec cta ---------- */
+
+  .spec-panel {
+    background: linear-gradient(155deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .spec-panel::after {
+    content: "9";
+    position: absolute;
+    right: -0.5rem;
+    bottom: -1.5rem;
+    font-size: 10rem;
+    color: var(--accent);
+    opacity: 0.06;
+    line-height: 1;
+  }
+
+  .spec-copy { max-width: 62ch; position: relative; }
+
+  .spec-copy h2 {
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+    margin: 0.9rem 0 0.75rem;
+    text-wrap: balance;
+  }
+
+  .spec-copy p {
+    color: var(--text-dim);
+    font-size: 0.98rem;
+    line-height: 1.65;
+    margin: 0 0 1.5rem;
+  }
+
+  .spec-copy code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 0.1rem 0.4rem;
+    border-radius: 5px;
+  }
+
+  .spec-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .spec-links .gh-link { font-family: var(--font-mono); }
+
+  /* ---------- tech strip ---------- */
+
+  .tech {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 0;
+  }
+
+  .tech .row {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .tech .label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+    flex: none;
+  }
+
+  .tech-list {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+  }
+
+  /* ---------- footer ---------- */
+
+  footer.site {
+    padding: 3rem 0 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  footer.site .brand { font-size: 0.95rem; }
+  footer.site .fine {
+    font-size: 0.83rem;
+    color: var(--text-faint);
+  }
+
+  footer.site .fine a { color: var(--text-dim); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+
+  /* ---------- responsive ---------- */
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 2.25rem; padding-top: 2.5rem; }
+    .hero-visual { height: 220px; order: -1; }
+    .box-stack { width: 168px; height: 168px; }
+    .box span { font-size: 1.3rem; border-radius: 8px; }
+    .box.front span.pick { font-size: 1.6rem; }
+    .steps { grid-template-columns: 1fr; }
+    .step figure { height: 380px; }
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .tech .row { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
+  }
+  a.brand { text-decoration: none; color: inherit; }
+  .hero-note { margin: 1rem 0 0; max-width: 46ch; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site">
+    <div class="row">
+      <a class="brand" href="/"><span class="dot"></span>proto-sudoku</a>
+      <a class="gh-link" href="https://eswat2.app">eswat2.app</a>
+    </div>
+  </header>
+
+  <main>
+  <div class="hero">
+    <div>
+      <span class="eyebrow">sudoku · on Cloudflare</span>
+      <h1 class="headline">A fresh puzzle, <em>whenever you want one.</em></h1>
+      <p class="sub">Classic 9×9 sudoku in the browser. Press New Puzzle, fill in the blanks, and check your work as you go. Every puzzle is generated on demand by a small Rust program running at the edge. No accounts, no ads, nothing to install.</p>
+      <div class="cta-row">
+        <a class="btn-primary" href="/">Play now</a>
+        <a class="gh-link" href="/architecture">How it's built</a>
+      </div>
+      <p class="meta-note hero-note">Single player, and no key needed. Your puzzle and every entry that passes a check are saved in this browser.</p>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="box-stack">
+        <div class="box back-a"><span>3</span><span></span><span>8</span><span></span><span>1</span><span></span><span>6</span><span></span><span>2</span></div>
+        <div class="box back-b"><span></span><span>7</span><span></span><span>4</span><span></span><span>9</span><span></span><span>5</span><span></span></div>
+        <div class="box front"><span>2</span><span class="blank"></span><span>8</span><span>6</span><span class="pick">5</span><span class="blank"></span><span class="blank"></span><span>3</span><span>9</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="walkthrough">
+    <div class="section-head">
+      <h2>How a puzzle goes</h2>
+      <p>One request for the puzzle, then everything happens in your browser. The board knows the answer, so checking your work is instant.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <figure><img src="/images/about-new.webp" width="600" height="1038" alt="A new puzzle: the SUDOKU title, a 9×9 board with the clues shaded grey, and the New Puzzle and Check ? buttons" loading="lazy"></figure>
+        <div class="step-body">
+          <div class="step-tag">STEP 1</div>
+          <h3>Start a puzzle</h3>
+          <p>Press New Puzzle and a fresh board arrives in a blink, usually with 25 to 30 clues. Every one has exactly one solution.</p>
+        </div>
+      </div>
+      <div class="step">
+        <figure><img src="/images/about-pick.webp" width="600" height="1082" alt="A puzzle in progress: one empty cell selected in red, its row, column and box highlighted in green, and buttons for the two digits it could still be, 4 and 8" loading="lazy"></figure>
+        <div class="step-body">
+          <div class="step-tag">STEP 2</div>
+          <h3>Pick a cell, pick a digit</h3>
+          <p>Tap an empty cell and its row, column and box light up. The buttons underneath offer only the digits that could still go there; <b>x</b> clears a cell.</p>
+        </div>
+      </div>
+      <div class="step">
+        <figure><img src="/images/about-solved.webp" width="600" height="1038" alt="A finished board with every cell filled and the message: You solved the puzzle!!" loading="lazy"></figure>
+        <div class="step-body">
+          <div class="step-tag">STEP 3</div>
+          <h3>Check, fix, finish</h3>
+          <p>Press Check ? whenever you like. Wrong guesses are cleared and right ones stay. Get every cell right and the board tells you so.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <span class="suit">4</span>
+      <h4>Never the same twice</h4>
+      <p>Each puzzle is generated when you ask for it: symmetric, minimal, and with a single solution, so logic always gets you there.</p>
+    </div>
+    <div class="feature">
+      <span class="suit">7</span>
+      <h4>Only legal moves</h4>
+      <p>The digit buttons leave out anything already in the cell's row, column or box, so you spend your time thinking, not scanning.</p>
+    </div>
+    <div class="feature">
+      <span class="suit">1</span>
+      <h4>Check on your terms</h4>
+      <p>Check as often or as rarely as you like. It quietly removes mistakes and keeps everything you got right.</p>
+    </div>
+    <div class="feature">
+      <span class="suit">9</span>
+      <h4>Picks up where you left off</h4>
+      <p>The puzzle and your checked entries live in this browser, so a reload or a closed tab doesn't cost you the board.</p>
+    </div>
+  </section>
+
+  <section class="spec-cta">
+    <div class="spec-panel">
+      <div class="spec-copy">
+        <span class="eyebrow">same api · new home</span>
+        <h2>Rust, at the edge</h2>
+        <p>The puzzle API started life as an Actix server on Heroku and went quiet when Heroku's free tier ended. Now the same Rust code is compiled to about <code>300 KB</code> of WebAssembly and runs on Cloudflare Workers, next to the page that calls it. A puzzle takes well under a millisecond to generate, the Worker keeps no state at all, and anyone can call <code>/api/puzzle</code> directly.</p>
+      </div>
+      <div class="spec-links">
+        <a class="btn-primary" href="/architecture">See the architecture</a>
+        <a class="gh-link" href="/api/puzzle">Try the API</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="tech">
+    <div class="row">
+      <span class="label">BUILT WITH</span>
+      <div class="tech-list">
+        <span class="chip">Rust</span>
+        <span class="chip">WebAssembly</span>
+        <span class="chip">workers-rs</span>
+        <span class="chip">Cloudflare Workers</span>
+        <span class="chip">Stencil web component</span>
+        <span class="chip">Tailwind</span>
+        <span class="chip">No server state</span>
+      </div>
+    </div>
+  </div>
+  </main>
+
+  <footer class="site">
+    <a class="brand" href="/"><span class="dot"></span>proto-sudoku</a>
+    <div class="fine"><a href="/">Play now</a> · <a href="/architecture">Architecture</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://eswat2.app">eswat2.app</a></div>
+  </footer>
+</div>
+</body>
+</html>

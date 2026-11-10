@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>proto-sudoku — System Architecture</title>
+<meta name="description" content="How proto-sudoku runs on Cloudflare: static assets plus a Rust Worker compiled to WebAssembly, with no server-side state.">
+<link rel="canonical" href="https://sudoku.eswat2.app/architecture">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script>
+(function(){try{var s=localStorage.getItem("outreach-theme");if(s==="light"||s==="dark")document.documentElement.setAttribute("data-theme",s)}catch(e){}})();
+</script>
+</head>
+<body>
+<style>
+:root {
+  --bg: #f4f5fa;
+  --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+  --bg-grid-dot: #c7d0da;
+  --panel: #ffffff;
+  --panel-alt: #eef1f5;
+  --border: #d7dee6;
+  --text: #1a212b;
+  --text-muted: #5c6b7a;
+  --accent: #d0392e;
+  --accent-soft: #d0392e1a;
+  --flow: #2f8f86;
+  --flow-soft: #2f8f8617;
+  --code-bg: #eceff3;
+
+  --tag-puzzle-h: 220; --tag-puzzle-s: 55%; --tag-puzzle-l: 42%;
+  --tag-ref-h: 265; --tag-ref-s: 45%; --tag-ref-l: 46%;
+  --tag-metrics-h: 35; --tag-metrics-s: 65%; --tag-metrics-l: 40%;
+  --tag-pick-h: 340; --tag-pick-s: 50%; --tag-pick-l: 44%;
+  --tag-tag-h: 165; --tag-tag-s: 40%; --tag-tag-l: 34%;
+  --tag-inputs-h: 205; --tag-inputs-s: 15%; --tag-inputs-l: 42%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0e14;
+    --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(255, 90, 79, 0.13), transparent);
+    --bg-grid-dot: #1c2330;
+    --panel: #12161f;
+    --panel-alt: #171c26;
+    --border: #2e3948;
+    --text: #e8ecf1;
+    --text-muted: #8a97a8;
+    --accent: #ff6b5e;
+    --accent-soft: #ff6b5e22;
+    --flow: #5fb3ac;
+    --flow-soft: #5fb3ac1f;
+    --code-bg: #10151d;
+
+    --tag-puzzle-l: 66%;
+    --tag-ref-l: 70%;
+    --tag-metrics-l: 62%;
+    --tag-pick-l: 68%;
+    --tag-tag-l: 58%;
+    --tag-inputs-l: 68%;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b0e14;
+  --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(255, 90, 79, 0.13), transparent);
+  --bg-grid-dot: #1c2330;
+  --panel: #12161f;
+  --panel-alt: #171c26;
+  --border: #2e3948;
+  --text: #e8ecf1;
+  --text-muted: #8a97a8;
+  --accent: #ff6b5e;
+  --accent-soft: #ff6b5e22;
+  --flow: #5fb3ac;
+  --flow-soft: #5fb3ac1f;
+  --code-bg: #10151d;
+
+  --tag-puzzle-l: 66%;
+  --tag-ref-l: 70%;
+  --tag-metrics-l: 62%;
+  --tag-pick-l: 68%;
+  --tag-tag-l: 58%;
+  --tag-inputs-l: 68%;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f5fa;
+  --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+  --bg-grid-dot: #c7d0da;
+  --panel: #ffffff;
+  --panel-alt: #eef1f5;
+  --border: #d7dee6;
+  --text: #1a212b;
+  --text-muted: #5c6b7a;
+  --accent: #d0392e;
+  --accent-soft: #d0392e1a;
+  --flow: #2f8f86;
+  --flow-soft: #2f8f8617;
+  --code-bg: #eceff3;
+
+  --tag-puzzle-l: 42%;
+  --tag-ref-l: 46%;
+  --tag-metrics-l: 40%;
+  --tag-pick-l: 44%;
+  --tag-tag-l: 34%;
+  --tag-inputs-l: 42%;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Same top glow as the app and /about, over the dot grid. */
+  background-image: var(--bg-glow), radial-gradient(var(--bg-grid-dot) 1px, transparent 1px);
+  background-size: 100% 100vh, 22px 22px;
+  background-repeat: no-repeat, repeat;
+  -webkit-font-smoothing: antialiased;
+}
+
+code, .mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+.page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 56px 24px 72px;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  text-align: left;
+  margin-bottom: 40px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-text { max-width: 62ch; }
+
+.config-badge {
+  flex-shrink: 0;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px 16px;
+  min-width: 240px;
+}
+
+.config-badge .cb-title {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 8px;
+}
+
+.config-badge dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  row-gap: 4px;
+  font-size: 11px;
+}
+
+.config-badge dt {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.config-badge dd {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.kicker {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+
+h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  text-wrap: balance;
+}
+
+.dek {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 62ch;
+  margin: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.layer {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 18px;
+}
+
+.layer-rail {
+  display: flex;
+  justify-content: center;
+  padding-top: 22px;
+}
+
+.layer-rail span {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  writing-mode: vertical-rl;
+  letter-spacing: 0.08em;
+}
+
+.layer-body {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 22px 24px 26px;
+}
+
+.layer-body > h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+}
+
+.card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.card h3 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.card .meta {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--accent);
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card p:not(.meta) {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.card code {
+  font-size: 12px;
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.connector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 10px 40px;
+  margin-left: 20px;
+}
+
+.connector::before {
+  content: "";
+  width: 1px;
+  height: 22px;
+  background: var(--flow);
+}
+
+.connector span {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--flow);
+  background: var(--flow-soft);
+  border: 1px solid var(--flow);
+  border-radius: 3px;
+  padding: 2px 7px;
+  letter-spacing: 0.03em;
+}
+
+.connector::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--flow);
+  border-bottom: 2px solid var(--flow);
+  transform: rotate(45deg);
+  margin-top: -4px;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.split-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.split-col .col-label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--flow);
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.route-group {
+  margin-bottom: 10px;
+}
+
+.route-group .group-label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 0 0 5px;
+}
+
+.route-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.route {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  color: var(--text);
+}
+
+.mount-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.mount-row .col-label { margin: 0; }
+
+.fn-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.fn-group .group-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+}
+
+.fn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fn-list code {
+  font-size: 12.5px;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.fn-note {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.layer-note {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  --h: 0; --s: 0%; --l: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 108px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid hsl(var(--h) var(--s) var(--l) / 0.5);
+  background: hsl(var(--h) var(--s) var(--l) / 0.12);
+}
+
+.chip .chip-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: hsl(var(--h) var(--s) var(--l));
+}
+
+.chip .chip-desc {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.chip.puzzle { --h: var(--tag-puzzle-h); --s: var(--tag-puzzle-s); --l: var(--tag-puzzle-l); }
+.chip.ref { --h: var(--tag-ref-h); --s: var(--tag-ref-s); --l: var(--tag-ref-l); }
+.chip.metrics { --h: var(--tag-metrics-h); --s: var(--tag-metrics-s); --l: var(--tag-metrics-l); }
+.chip.pick { --h: var(--tag-pick-h); --s: var(--tag-pick-s); --l: var(--tag-pick-l); }
+.chip.tag { --h: var(--tag-tag-h); --s: var(--tag-tag-s); --l: var(--tag-tag-l); }
+.chip.inputs { --h: var(--tag-inputs-h); --s: var(--tag-inputs-s); --l: var(--tag-inputs-l); }
+
+.data-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+}
+
+.data-flow-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.data-flow-inner .arrow {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.data-flow-inner span.label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1.4;
+}
+
+footer.note {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+footer.note code { font-size: 11.5px; }
+footer.note a { color: inherit; text-underline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .layer { grid-template-columns: 1fr; }
+  .layer-rail { display: none; }
+  .connector { margin-left: 0; padding-left: 0; }
+}
+</style>
+<div class="page">
+  <header class="hero">
+    <div class="hero-text">
+      <p class="kicker">proto-sudoku</p>
+      <h1>System Architecture</h1>
+      <p class="dek">Classic sudoku on Cloudflare: static files serve the page, and a small Rust program compiled to WebAssembly generates every puzzle. One Worker, no database, no server-side state, no accounts.</p>
+    </div>
+    <div class="config-badge">
+      <p class="cb-title">worker — wrangler.jsonc</p>
+      <dl>
+        <dt>name</dt><dd>→ rust-sudoku-api</dd>
+        <dt>main</dt><dd>→ build/index.js + index_bg.wasm</dd>
+        <dt>assets</dt><dd>→ ./public (served first)</dd>
+        <dt>routes</dt><dd>→ sudoku.eswat2.app (custom domain)</dd>
+        <dt>dev port</dt><dd>→ :8787 (wrangler dev)</dd>
+      </dl>
+    </div>
+  </header>
+
+  <main class="stack">
+
+    <section class="layer">
+      <div class="layer-rail"><span>L1 · CLIENT</span></div>
+      <div class="layer-body">
+        <h2>Web Component — proto-sudoku-wc on npm</h2>
+        <div class="card-row">
+          <article class="card">
+            <h3>&lt;proto-sudoku&gt;</h3>
+            <p class="meta">the whole game</p>
+            <p>A Stencil and Tailwind component in its own Shadow DOM: the board, the digit buttons, New Puzzle, Check ? and the status line. <code>platform="cloudflare"</code> points it at the relative path <code>/api</code>.</p>
+          </article>
+          <article class="card">
+            <h3>store</h3>
+            <p class="meta">state in memory</p>
+            <p>Holds the 81 cells, the picked cell and its peers (row, column, box), and the legal digits for it. Decodes <code>ref</code> once, so Check compares every entry locally — no second request.</p>
+          </article>
+          <article class="card">
+            <h3>localStorage</h3>
+            <p class="meta">survives a reload</p>
+            <p>The puzzle, the picked cell, and the entries that passed a check. Unchecked entries stay in memory only, so a reload drops them.</p>
+          </article>
+        </div>
+        <p class="layer-note" style="margin-top:14px;">The page loads the component from jsDelivr at an exact version (<code>proto-sudoku-wc@0.1.340</code>). Stencil lazy-loads hashed chunks through the same URL, so <code>@latest</code> could mix files from two releases; <code>.wc-loader</code> bumps the pin instead.</p>
+      </div>
+    </section>
+
+    <div class="connector flow"><span>GET /api/puzzle</span></div>
+
+    <section class="layer">
+      <div class="layer-rail"><span>L2 · EDGE</span></div>
+      <div class="layer-body">
+        <h2>Cloudflare Workers — wrangler.jsonc</h2>
+        <div class="card-row">
+          <article class="card">
+            <h3>Static assets</h3>
+            <p class="meta">public/ · no Worker invocation</p>
+            <p>Any path that matches a file: the game page, <code>/about</code>, this page, <code>/llms.txt</code>, images and favicons. Most requests never run the Rust code.</p>
+          </article>
+          <article class="card">
+            <h3>Worker</h3>
+            <p class="meta">build/index.js · ~300 KB wasm</p>
+            <p>Everything without a matching file. A small JS shim from <code>worker-build</code> loads the wasm module and hands it each request.</p>
+          </article>
+          <article class="card">
+            <h3>Local</h3>
+            <p class="meta">wrangler dev · :8787</p>
+            <p>Runs <code>worker-build --release</code>, then the same Worker in a local workerd. No other services to start.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector flow"><span>routes</span></div>
+
+    <section class="layer">
+      <div class="layer-rail"><span>L3 · API</span></div>
+      <div class="layer-body">
+        <h2>Router — src/lib.rs</h2>
+        <div class="split">
+          <div class="split-col">
+            <p class="col-label">Game</p>
+            <div class="route-group">
+              <p class="group-label">One route does the work</p>
+              <div class="route-list">
+                <span class="route">GET /api/puzzle</span><span class="route">OPTIONS *</span>
+              </div>
+            </div>
+            <div class="route-group">
+              <p class="group-label">Leftover demo — returns {"hello": name}</p>
+              <div class="route-list">
+                <span class="route">GET /:name</span><span class="route">GET /api/:name</span>
+              </div>
+            </div>
+          </div>
+          <div class="split-col">
+            <p class="col-label">Static</p>
+            <div class="route-group">
+              <p class="group-label">Pages</p>
+              <div class="route-list">
+                <span class="route">/</span><span class="route">/about</span><span class="route">/architecture</span>
+              </div>
+            </div>
+            <div class="route-group">
+              <p class="group-label">Discovery — for LLMs &amp; agents, not the app itself</p>
+              <div class="route-list">
+                <span class="route">/llms.txt</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="layer-note" style="margin-top:16px;">Every Worker response — 404s and <code>OPTIONS</code> preflights included — gets permissive CORS headers in one place after routing (<code>Access-Control-Allow-Origin: *</code>, methods <code>GET,OPTIONS</code>), so any page can call the API. There is no key and no rate limit.</p>
+      </div>
+    </section>
+
+    <div class="connector flow"><span>calls</span></div>
+
+    <section class="layer">
+      <div class="layer-rail"><span>L4 · CORE</span></div>
+      <div class="layer-body">
+        <h2>Rust → WebAssembly — workers-rs 0.8 &amp; the sudoku crate</h2>
+        <div class="fn-groups">
+          <div class="fn-group">
+            <p class="group-label">Handlers</p>
+            <ul class="fn-list">
+              <li><code>fetch()</code> <span class="fn-note">— the router, then CORS</span></li>
+              <li><code>puzzle()</code> <span class="fn-note">— builds the JSON</span></li>
+              <li><code>greet()</code> <span class="fn-note">— the demo route</span></li>
+              <li><code>with_cors()</code></li>
+            </ul>
+          </div>
+          <div class="fn-group">
+            <p class="group-label">Puzzle — plain Rust, no Worker types</p>
+            <ul class="fn-list">
+              <li><code>new_puzzle()</code></li>
+              <li><code>Sudoku::generate()</code> <span class="fn-note">— unique, minimal, symmetric</span></li>
+              <li><code>solution()</code> <span class="fn-note">— solved straight away</span></li>
+              <li><code>base64</code> <span class="fn-note">— encodes the answer</span></li>
+            </ul>
+          </div>
+          <div class="fn-group">
+            <p class="group-label">Build</p>
+            <ul class="fn-list">
+              <li><code>worker-build --release</code></li>
+              <li><code>opt-level = "s"</code> <span class="fn-note">— plus LTO</span></li>
+              <li><code>getrandom</code> <span class="fn-note">— js feature, crypto.getRandomValues</span></li>
+            </ul>
+          </div>
+          <div class="fn-group">
+            <p class="group-label">Bench — benches/puzzle.rs</p>
+            <ul class="fn-list">
+              <li><code>cargo bench</code> <span class="fn-note">— Criterion, native</span></li>
+              <li><span class="fn-note">generate ~80 µs · solve ~2 µs</span></li>
+              <li><span class="fn-note">wasm runs ~1.5–3× slower</span></li>
+              <li><span class="fn-note">free plan allows 10 ms CPU</span></li>
+            </ul>
+          </div>
+        </div>
+        <p class="layer-note">Because <code>new_puzzle()</code> has no Worker types, the same function is benchmarked natively. The response carries no timings: Workers freezes the clock while code runs, so a timer would always read 0.</p>
+      </div>
+    </section>
+
+    <div class="connector flow"><span>JSON response</span></div>
+
+    <section class="layer">
+      <div class="layer-rail"><span>L5 · DATA</span></div>
+      <div class="layer-body">
+        <h2>No server storage — the puzzle lives in the browser</h2>
+        <div class="split" style="grid-template-columns: 1fr auto 1fr; align-items: center;">
+          <div class="split-col">
+            <p class="col-label">/api/puzzle — response</p>
+            <div class="chip-row">
+              <div class="chip puzzle"><span class="chip-name">puzzle</span><span class="chip-desc">81 chars · dots blank</span></div>
+              <div class="chip ref"><span class="chip-name">ref</span><span class="chip-desc">base64 solution</span></div>
+              <div class="chip metrics"><span class="chip-name">metrics</span><span class="chip-desc">blanks + clues</span></div>
+              <div class="chip tag"><span class="chip-name">tag</span><span class="chip-desc">"cloudflare"</span></div>
+            </div>
+          </div>
+          <div class="data-flow">
+            <div class="data-flow-inner">
+              <span class="arrow">&#8594;</span>
+              <span class="label">saved by<br>the component</span>
+            </div>
+          </div>
+          <div class="split-col">
+            <p class="col-label">localStorage — proto-sudoku::</p>
+            <div class="chip-row">
+              <div class="chip puzzle"><span class="chip-name">data</span><span class="chip-desc">the response</span></div>
+              <div class="chip inputs"><span class="chip-name">inputs</span><span class="chip-desc">checked entries</span></div>
+              <div class="chip pick"><span class="chip-name">pick</span><span class="chip-desc">selected cell</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="layer-note" style="margin-top:14px;">The solution ships with the puzzle on purpose: it's a casual game, and checking in the browser beats a round trip. Base64 hides the answer from a glance; it doesn't protect it.</p>
+      </div>
+    </section>
+
+    <div class="connector flow"><span>deploy</span></div>
+
+    <section class="layer">
+      <div class="layer-rail"><span>L6 · SHIP</span></div>
+      <div class="layer-body">
+        <h2>Deploys &amp; hosting — scripts/deploy.sh</h2>
+        <div class="card-row">
+          <article class="card">
+            <h3>Local deploys</h3>
+            <p class="meta">10–30 s · not Workers Builds</p>
+            <p>Workers Builds had no Rust cache and took 6–7 minutes a push. The script builds locally, ships only a clean <code>main</code> that matches the remote, and tags the deploy with the commit.</p>
+          </article>
+          <article class="card">
+            <h3>Two hostnames</h3>
+            <p class="meta">custom domain + workers.dev</p>
+            <p><code>sudoku.eswat2.app</code> is a Workers Custom Domain, so Cloudflare manages its DNS and certificate. <code>rust-sudoku-api.eswat2.workers.dev</code> stays on too.</p>
+          </article>
+          <article class="card">
+            <h3>Wasm, not Containers</h3>
+            <p class="meta">free plan · no cold start</p>
+            <p>Containers could have run the old Actix binary unchanged, but need the paid plan. Before the port it lived on Heroku until the free tier ended in 2022. A serverless copy still runs on Vercel.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="note">
+    Reflects <code>src/lib.rs</code>, <code>wrangler.jsonc</code>, <code>Cargo.toml</code> and <code>proto-sudoku-wc@0.1.340</code> as of 2026-11-10. <a href="/">Play</a> · <a href="/about">About</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://eswat2.app">eswat2.app</a>
+  </footer>
+</div>
+
+</body>
+</html>

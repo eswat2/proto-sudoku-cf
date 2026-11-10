@@ -1,0 +1,46 @@
+# proto-sudoku
+
+Classic 9x9 sudoku in the browser, by Richard Hess. Single player. No
+accounts, no signup step and no key.
+
+Live app: https://sudoku.eswat2.app
+About: https://sudoku.eswat2.app/about
+Architecture: https://sudoku.eswat2.app/architecture
+
+The page at / is a web component (proto-sudoku-wc, on npm) and renders
+nothing useful without JavaScript. Use this file or the API instead of
+scraping it.
+
+## How it works
+
+- One Cloudflare Worker. Static files are served by Workers Static Assets;
+  the API is Rust compiled to WebAssembly (workers-rs and the sudoku crate).
+- No server-side state. The browser checks the board itself: Check clears
+  wrong entries and keeps right ones. The puzzle and checked entries are saved
+  in localStorage.
+
+## API
+
+GET https://sudoku.eswat2.app/api/puzzle
+
+Returns a new puzzle with a unique solution on every call. CORS is open to
+any origin.
+
+```
+{
+  "metrics": { "counts": { "blanks": 52, "clues": 29 } },
+  "puzzle": "51..6...28.2......6..3.8.9.4..9..8.........5.1564............192...9...8...54....",
+  "ref": "NTE5NzY0MzgyODMy...",
+  "tag": "cloudflare"
+}
+```
+
+- puzzle: 81 characters, row by row from the top left. Digits are clues,
+  dots are blanks.
+- ref: the solution as 81 digits, base64-encoded.
+- metrics.counts: the number of blanks and clues.
+- tag: the platform that served the response.
+
+## Part of
+
+eswat2.app, small apps by Richard Hess: https://eswat2.app

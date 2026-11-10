@@ -57,10 +57,14 @@ npx wrangler triggers deploy
 | Route | Description |
 | :--- | :--- |
 | `/` | _`public/index.html`, served by Workers Static Assets_ |
+| `/about` | _`public/about.html`, styled like the poker and retro about pages. `node scripts/capture-about.mjs` regenerates its screenshots in `public/images/`_ |
+| `/architecture` | _`public/architecture.html`, styled like the poker and retro architecture pages_ |
+| `/llms.txt` | _`public/llms.txt`, notes for AI clients_ |
+| `/favicon.svg`, `/favicon.ico` | _the icon; the `.ico` is a 32px render of the svg_ |
 | `/api/puzzle` | _a new puzzle and its solution_ |
 | `/api/:name`, `/:name` | _`{"hello": name}`_ |
 
-every response carries permissive CORS headers, including 404s and `OPTIONS` preflights.
+static files win over the Worker: any path matching a file in `public/` never runs the Rust code. every Worker response carries permissive CORS headers, including 404s and `OPTIONS` preflights.
 
 ## output:
 
