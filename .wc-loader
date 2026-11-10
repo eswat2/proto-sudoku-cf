@@ -69,7 +69,7 @@ then
   # NOTE:  new utility to do the _CDN substitution...
   subCDN $BAK1 > $BAK2
 
-  cp $BAK2 index.html
+  cp $BAK2 public/index.html
   rm $BAK1 $BAK2
   [ -f .tmp.json ] && rm .tmp.json
 

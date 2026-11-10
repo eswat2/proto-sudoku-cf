@@ -114,8 +114,8 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
       </div>
     </div>
     <h1>Sudoku API Workers Port</h1>
-    <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Nothing has been changed in the repo yet.</p>
-    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Status <b>not started</b></span></div>
+    <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–06 are done on the <code>cloudflare-workers</code> branch and pass locally. Deploying is next.</p>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Status <b>steps 01–06 done locally</b></span></div>
   </header>
 
   <main>
@@ -147,10 +147,10 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
       <div class="chips"><span class="chip pre">2 open</span></div>
     </div>
     <ul class="reqs">
-      <li><span class="req">Workers (WebAssembly), not Containers</span><span class="chip ok">Settled</span><span class="ev">It runs free, scales to zero and has no cold start. Puzzle generation takes about 0.3 ms natively, well inside the free plan's 10 ms of CPU per request. Containers stay as the fallback (see the last card).</span></li>
+      <li><span class="req">Workers (WebAssembly), not Containers</span><span class="chip ok">Settled</span><span class="ev">It runs free, scales to zero and has no cold start. <code>cargo bench</code> puts a full puzzle (generate + solve) at about 82 µs natively, or roughly 0.25 ms at a pessimistic 3× for wasm, well inside the free plan's 10 ms of CPU per request. Containers stay as the fallback (see the last card).</span></li>
       <li><span class="req">Port this repo, not sudoku-rust-api</span><span class="chip ok">Settled</span><span class="ev">This repo is already on <code>sudoku</code> 0.8 / <code>rand</code> 0.8 / <code>base64</code> 0.22. The Vercel repo is on <code>rand</code> 0.5 and would need those upgrades first.</span></li>
-      <li><span class="req">What happens to <code>metrics.nanos</code></span><span class="chip warn">Your call</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The plan keeps the fields and reports 0 so clients don't break. The alternative is to remove them.</span></li>
-      <li><span class="req">The <code>platform</code> attribute in <code>index.html</code></span><span class="chip warn">Check</span><span class="ev">The page renders <code>&lt;proto-sudoku platform="local"/&gt;</code>. Check how <code>proto-sudoku-wc</code> maps <code>platform</code> to an API URL. The page should call its own origin, and there may be no <code>cloudflare</code> value yet.</span></li>
+      <li><span class="req"><code>metrics.nanos</code> removed; timings move to <code>cargo bench</code></span><span class="chip ok">Settled</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The response now has only <code>metrics.counts</code>. <code>benches/puzzle.rs</code> (Criterion) times <code>generate</code>, <code>solve</code> and <code>new_puzzle</code> natively. Native times were about 80 µs, 2 µs and 82 µs on 2026-11-10.</span></li>
+      <li><span class="req">The <code>platform</code> attribute in <code>index.html</code></span><span class="chip warn">Needs a component change</span><span class="ev">Checked in <code>proto-sudoku-wc</code> 0.1.339 (<code>utils/store.js</code>): it knows only <code>local</code> → <code>http://localhost:8080/api</code>, <code>netlify</code> → <code>/.netlify/functions</code> and <code>vercel</code> → <code>https://sudoku-rust-api.vercel.app/api</code>. Any other value falls back to Vercel. <b>No value calls the page's own <code>/api</code></b>, so the deployed page will call another server until the component gets a <code>cloudflare: '/api'</code> entry. It sends <code>X-Requested-With</code> and <code>X-Custom-Header</code>, so cross-origin calls need the CORS preflight.</span></li>
     </ul>
   </section>
 
@@ -161,7 +161,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     </div>
     <ul class="checklist" id="cl">
       <li class="group">Before step 01 · decisions</li>
-      <li><input type="checkbox" id="d-nanos" disabled><label for="d-nanos">Decide <code>metrics.nanos</code>: report 0, or remove the fields</label><span class="chip warn">Your call</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="d-nanos" disabled><label for="d-nanos">Decide <code>metrics.nanos</code>: removed, with <code>cargo bench</code> added</label><span class="chip warn">Your call</span><span class="cnote" hidden></span></li>
       <li><input type="checkbox" id="d-platform" disabled><label for="d-platform">Confirm the <code>platform</code> value <code>proto-sudoku-wc</code> needs to call its own origin</label><span class="chip warn">Check</span><span class="cnote" hidden></span></li>
       <li class="group">Step 01 · prep</li>
       <li><input type="checkbox" id="s1-branch" disabled><label for="s1-branch">Branch <code>cloudflare-workers</code> created</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
@@ -174,7 +174,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
       <li><input type="checkbox" id="s3-lib" disabled><label for="s3-lib"><code>src/lib.rs</code> written and builds for <code>wasm32-unknown-unknown</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
       <li class="group">Step 04 · static page</li>
       <li><input type="checkbox" id="s4-move" disabled><label for="s4-move"><code>index.html</code> moved to <code>public/</code>, <code>src/main.rs</code> removed</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
-      <li><input type="checkbox" id="s4-scripts" disabled><label for="s4-scripts"><code>.update</code> and <code>.wc-loader</code> both write <code>public/index.html</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s4-scripts" disabled><label for="s4-scripts"><code>.wc-loader</code> (and its <code>.update</code> symlink) writes <code>public/index.html</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
       <li><input type="checkbox" id="s4-template" disabled><label for="s4-template"><code>platform</code> attribute set in <code>.template.html</code> and <code>public/index.html</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
       <li class="group">Step 05 · wrangler.jsonc</li>
       <li><input type="checkbox" id="s5-config" disabled><label for="s5-config"><code>wrangler.jsonc</code> added with the checked <code>main</code> path</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
@@ -224,7 +224,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = "0.6"        # check the current version with: cargo search worker
+worker = "0.8"        # 0.8.7 when ported (cargo search worker)
 base64 = "0.22"
 serde_json = "1"
 sudoku = "0.8"
@@ -276,9 +276,9 @@ fn puzzle() -&gt; Result&lt;Response&gt; {
 
     let data = json!({
         "metrics": {
-            "counts": { "blanks": blanks, "clues": 81 - blanks },
-            // Workers freezes the clock while code runs, so timings always read 0.
-            "nanos": { "generate": 0, "solve": 0 }
+            "counts": { "blanks": blanks, "clues": 81 - blanks }
+            // No "nanos": Workers freezes the clock while code runs, so they
+            // always read 0. benches/puzzle.rs measures them natively instead.
         },
         "puzzle": puzzle,
         "ref": general_purpose::STANDARD.encode(line),
@@ -308,11 +308,11 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -&gt; Result&lt;Response&g
 
     <article class="card">
       <div class="card-head">
-        <div class="who"><span class="order">Step 04 · static page</span><h2>Move index.html to public/</h2><span class="title">And update both scripts that regenerate it</span></div>
+        <div class="who"><span class="order">Step 04 · static page</span><h2>Move index.html to public/</h2><span class="title">And update the script that regenerates it</span></div>
         <div class="chips"><span class="chip quiet">Not started</span></div>
       </div>
-      <p class="why"><code>.update</code> and <code>.wc-loader</code> both rebuild <code>index.html</code> from <code>.template.html</code> by bumping web-component versions. Each one's last copy step writes to the repo root, so <b>point both at <code>public/index.html</code></b> or the next bump will recreate the old file.</p>
-      <dl><dt>.update</dt><dd><code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code></dd><dt>.wc-loader</dt><dd>Line 72, the same change: <code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code></dd><dt>Template</dt><dd>Set the <code>platform</code> attribute in <code>.template.html</code> once you've confirmed the value (see Decisions)</dd></dl>
+      <p class="why"><code>.wc-loader</code> rebuilds <code>index.html</code> from <code>.template.html</code> by bumping web-component versions (<code>.update</code> is a symlink to it). Its last copy step writes to the repo root, so <b>point it at <code>public/index.html</code></b> or the next bump will recreate the old file.</p>
+      <dl><dt>.wc-loader</dt><dd>Line 72: <code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code>. <code>.update</code> follows, since it's a symlink.</dd><dt>Template</dt><dd>Set the <code>platform</code> attribute in <code>.template.html</code> once you've confirmed the value (see Decisions)</dd></dl>
       <div class="msg">
         <pre class="code" id="s4">mkdir -p public
 git mv index.html public/index.html
@@ -333,7 +333,7 @@ git rm src/main.rs</pre>
   "main": "build/index.js",
   "compatibility_date": "2026-11-01",
   "build": {
-    "command": "cargo install -q worker-build &amp;&amp; worker-build --release"
+    "command": "cargo install -q \"worker-build@^0.8\" &amp;&amp; worker-build --release"
   },
   "assets": { "directory": "./public" }
 }</pre>
@@ -385,7 +385,7 @@ git rm Procfile app.json</pre>
       <li><b>getrandom build error mentioning wasm32-unknown-unknown.</b> The <code>js</code> feature is missing, or a second <code>getrandom</code> version crept in. Run <code>cargo tree -i getrandom</code>.</li>
       <li><b>Every <code>/api/:name</code> request returns 404.</b> Newer router versions use <code>{name}</code> instead of <code>:name</code>.</li>
       <li><b>"/" returns JSON <code>{"hello":"..."}</code> instead of the page.</b> The assets directory is wrong, or <code>run_worker_first</code> is set.</li>
-      <li><b>Error 1102, CPU limit exceeded.</b> This is unlikely at about 0.3 ms per puzzle, but a debug build is much slower. Make sure the build uses <code>--release</code>.</li>
+      <li><b>Error 1102, CPU limit exceeded.</b> This is unlikely at about 82 µs per puzzle natively, but a debug build is much slower. Make sure the build uses <code>--release</code>.</li>
     </ul>
   </section>
 
