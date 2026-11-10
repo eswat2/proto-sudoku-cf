@@ -21,15 +21,17 @@ simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssem
 - [localhost:8787][local]
 - [localhost:8787/api/puzzle][puzzle]
 
-to deploy:
+to deploy (builds locally, then uploads):
 
 ```
-npx wrangler deploy
+bash scripts/deploy.sh
 ```
+
+the script only deploys a clean `main` that matches `origin/main`, and tags the deploy with the commit (`wrangler deploy --message`). `bash scripts/deploy.sh --dry-run` builds and checks without uploading.
 
 the first build installs `worker-build` and needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
-pushes to `main` deploy automatically through Cloudflare Workers Builds, which runs `bash scripts/cf-build.sh deploy` (other branches run `preview`, which uploads a version without promoting it). The build image has no Rust, so the script installs it first. `bash scripts/cf-build.sh check` runs the same build locally with `wrangler deploy --dry-run`.
+> there is no auto-deploy: Cloudflare Workers Builds was tried, but with no Rust cache it took 6-7 minutes per push. Local deploys take about 10-30 seconds.
 
 ## routes:
 

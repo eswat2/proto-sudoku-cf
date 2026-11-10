@@ -17,6 +17,7 @@
     "rustup",
     "serde",
     "tlsv",
+    "toplevel",
     "wasm",
     "workerd",
     "wrangler"
