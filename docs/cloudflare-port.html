@@ -1,0 +1,480 @@
+<title>Sudoku API Workers Port</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: house style (eswat2). One column of cards. */
+:root{
+  --ground:#f4f5f7; --surface:#ffffff; --surface-2:#eaedf2; --rule:#d7dbe3; --rule-soft:#e6e9ef;
+  --ink:#14171f; --dim:#5b6373; --faint:#646c7b;
+  --ok:#16795f; --ok-soft:#e1f2ec; --warn:#a15c11; --warn-soft:#fbefe0; --pre:#4353c4; --pre-soft:#e8ebfa;
+  --shadow:0 1px 2px rgba(20,23,31,.06),0 8px 20px rgba(20,23,31,.05);
+  --sans:Archivo,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"DM Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0c0e13; --surface:#14171f; --surface-2:#1b1f29; --rule:#272c37; --rule-soft:#1e222c;
+  --ink:#e4e7ee; --dim:#949cac; --faint:#7e8696;
+  --ok:#5ec8a8; --ok-soft:#12261f; --warn:#d9944a; --warn-soft:#2b2014; --pre:#8b9ff8; --pre-soft:#1c2140;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0c0e13; --surface:#14171f; --surface-2:#1b1f29; --rule:#272c37; --rule-soft:#1e222c;
+  --ink:#e4e7ee; --dim:#949cac; --faint:#7e8696;
+  --ok:#5ec8a8; --ok-soft:#12261f; --warn:#d9944a; --warn-soft:#2b2014; --pre:#8b9ff8; --pre-soft:#1c2140;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 10px 24px rgba(0,0,0,.35); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding-block:2.75rem 4rem;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:2.25rem}
+main{display:flex;flex-direction:column;gap:2.25rem;min-width:0}
+:focus-visible{outline:2px solid var(--pre);outline-offset:2px;border-radius:3px}
+a{color:inherit;text-decoration-color:var(--rule);text-underline-offset:3px}
+a:hover{text-decoration-color:currentColor}
+code{font:400 .86em var(--mono);background:var(--surface-2);padding:.08em .35em;border-radius:4px;overflow-wrap:anywhere}
+header{display:flex;flex-direction:column;gap:.7rem}
+.mast-top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
+.eyebrow{font:500 .7rem/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:0}
+h1{margin:0;font-size:clamp(2.1rem,6vw,3.1rem);font-weight:700;letter-spacing:-.035em;line-height:.98;text-wrap:balance}
+h2{margin:0;font-size:1.3rem;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+h3{margin:0;font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.lede{margin:0;max-width:62ch;color:var(--dim);font-size:1.05rem}
+.meta{margin:0;padding-left:.9rem;border-left:2px solid var(--rule);color:var(--dim);font-size:.92rem;display:flex;flex-wrap:wrap;gap:.3rem 1.2rem}
+.meta b{color:var(--ink);font-weight:600;font-family:var(--mono);font-size:.85rem}
+.theme-toggle{display:inline-flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--rule);border-radius:999px}
+.theme-opt{width:30px;height:30px;display:grid;place-items:center;padding:0;border:0;border-radius:50%;background:none;color:var(--faint);cursor:pointer}
+.theme-opt svg{width:16px;height:16px;display:block}
+.theme-opt:hover{color:var(--ink);background:var(--surface-2)}
+.theme-opt[aria-pressed="true"],.theme-opt[aria-pressed="true"]:hover{color:var(--ground);background:var(--ink)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.note{margin:0;padding:14px 17px;border-radius:8px;background:var(--warn-soft);border-left:3px solid var(--warn);color:var(--ink);font-size:.95rem}
+.note.info{background:var(--pre-soft);border-left-color:var(--pre)}
+.stack{display:flex;flex-direction:column;gap:1.1rem}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--shadow);padding:1.3rem 1.4rem 1.4rem;display:flex;flex-direction:column;gap:.9rem;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
+.who{display:flex;flex-direction:column;gap:.25rem;min-width:0}
+.order{font:500 .68rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.title{color:var(--dim);font-size:.95rem}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 .72rem/1 var(--mono);padding:5px 9px;border-radius:999px;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.ok{color:var(--ok);background:var(--ok-soft)}
+.pre{color:var(--pre);background:var(--pre-soft)}
+.quiet{color:var(--dim);background:var(--surface-2)}
+.warn{color:var(--warn);background:var(--warn-soft)}
+.why{margin:0;color:var(--dim);font-size:.95rem;max-width:68ch}
+.why b{color:var(--ink);font-weight:600}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.35rem 1rem;font-size:.9rem}
+dt{font:500 .68rem/1.9 var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+dd{margin:0;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.reqs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-top:1px solid var(--rule-soft)}
+.reqs li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.3rem 1rem;padding:.75rem 0;border-bottom:1px solid var(--rule-soft)}
+.reqs .req{font-weight:600;font-size:.93rem}
+.reqs .ev{grid-column:1/-1;color:var(--dim);font-size:.9rem}
+.reqs .chip{align-self:start}
+.checklist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-top:1px solid var(--rule-soft)}
+.checklist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.2rem .75rem;align-items:start;padding:.6rem 0;border-bottom:1px solid var(--rule-soft)}
+.checklist li.group{display:block;padding:1rem 0 .45rem;font:500 .68rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+.checklist input{width:18px;height:18px;margin:.12rem 0 0;accent-color:var(--ok);cursor:pointer}
+.checklist input:disabled{cursor:default}
+.checklist label{font-size:.93rem;min-width:0;cursor:pointer}
+.checklist input:disabled + label{cursor:default}
+.checklist li.done label{color:var(--dim);text-decoration:line-through;text-decoration-color:var(--rule)}
+.checklist .chip{align-self:start}
+.checklist .cnote{grid-column:2/-1;font:400 .76rem/1.45 var(--mono);color:var(--faint);overflow-wrap:anywhere}
+.cl-status{margin:0;font:400 .78rem/1.4 var(--mono);color:var(--faint)}
+.cl-status:empty{display:none}
+.msg{display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.msg pre{margin:0;padding:.95rem 1rem;background:var(--surface-2);border:1px solid var(--rule-soft);border-radius:8px;font:400 .86rem/1.6 var(--mono);color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.msg pre.code{white-space:pre;overflow-wrap:normal;overflow-x:auto;max-height:28rem}
+.msg-bar{display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap}
+.len{font:500 .75rem/1 var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+.copy{font:500 .82rem/1 var(--sans);padding:.58rem .9rem;border-radius:8px;border:1px solid var(--ink);background:var(--ink);color:var(--ground);cursor:pointer}
+.copy:hover{opacity:.88}
+.copy.done{background:var(--ok);border-color:var(--ok)}
+.card.elsewhere{border-color:var(--pre);box-shadow:0 0 0 3px var(--pre-soft),var(--shadow)}
+.also{display:flex;flex-direction:column;gap:.6rem}
+.also ul{margin:0;padding-left:1.1rem;color:var(--dim);font-size:.95rem;display:flex;flex-direction:column;gap:.3rem}
+.also b{color:var(--ink);font-weight:600}
+footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);font-size:.82rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script>
+(function(){try{var s=localStorage.getItem("outreach-theme");if(s==="light"||s==="dark")document.documentElement.setAttribute("data-theme",s)}catch(e){}})();
+</script>
+
+<div class="wrap">
+  <header>
+    <div class="mast-top">
+      <p class="eyebrow">rust-sudoku-api · Cloudflare · Runbook</p>
+      <div class="theme-toggle" role="group" aria-label="Colour theme">
+        <button class="theme-opt" type="button" data-choice="light" aria-pressed="false" title="Light"><span class="sr-only">Light</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg></button>
+        <button class="theme-opt" type="button" data-choice="auto" aria-pressed="true" title="Match system"><span class="sr-only">Match system</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/></svg></button>
+        <button class="theme-opt" type="button" data-choice="dark" aria-pressed="false" title="Dark"><span class="sr-only">Dark</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 13.4A8.6 8.6 0 1 1 10.6 3.2a6.7 6.7 0 0 0 10.2 10.2z"/></svg></button>
+      </div>
+    </div>
+    <h1>Sudoku API Workers Port</h1>
+    <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Nothing has been changed in the repo yet.</p>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>rust-sudoku-api @ 00cdebb</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Status <b>not started</b></span></div>
+  </header>
+
+  <main>
+  <p class="note"><b>Work on a branch.</b> This port removes Actix, the <code>Procfile</code> and <code>app.json</code>. Keep <code>main</code> as the working Actix server until the Worker is deployed and answers <code>/api/puzzle</code> correctly.</p>
+
+  <section class="card" aria-label="Hand-off prompt">
+    <div class="card-head">
+      <div class="who"><span class="order">Start here · new session</span><h2>Hand-off prompt</h2><span class="title">Paste into Claude Code, started in the rust-sudoku-api repo</span></div>
+      <div class="chips"><span class="chip pre">For Claude</span></div>
+    </div>
+    <p class="why">This page is saved in the repo at <b>docs/cloudflare-port.html</b>, so the next session can read it directly.</p>
+    <div class="msg">
+      <pre id="handoff">Port this Actix server to Cloudflare Workers using workers-rs. The plan is in docs/cloudflare-port.html; read it first and follow steps 01 to 06 in order.
+
+- Create a branch named cloudflare-workers before changing anything.
+- Before writing code, check the current worker crate version and the cloudflare/workers-rs template for two things that change between releases: the worker-build output path (used as "main" in wrangler.jsonc) and the Router path-parameter syntax (":name" or "{name}").
+- Keep the /api/puzzle JSON shape exactly the same as today.
+- This project will have a wrangler.jsonc, so use Wrangler (via npx), not the cf CLI.
+- Stop and ask me before running wrangler deploy, and before deleting Procfile or app.json.
+- After step 06, stop and ask before starting step 07.
+- The live checklist is at https://claude.ai/artifact/L5S7Hrw6FohTjdWuswueFU (collection "checklist", one document per item id, body {done, note}). Tick items there with ArtifactData as you finish them, with a short note such as a commit hash.</pre>
+      <div class="msg-bar"><span class="len" data-for="handoff"></span><button class="copy" type="button" data-copy="handoff">Copy prompt</button></div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Decisions">
+    <div class="card-head">
+      <div class="who"><span class="order">Before step 01</span><h2>Decisions</h2><span class="title">What's settled and what's still yours</span></div>
+      <div class="chips"><span class="chip pre">2 open</span></div>
+    </div>
+    <ul class="reqs">
+      <li><span class="req">Workers (WebAssembly), not Containers</span><span class="chip ok">Settled</span><span class="ev">It runs free, scales to zero and has no cold start. Puzzle generation takes about 0.3 ms natively, well inside the free plan's 10 ms of CPU per request. Containers stay as the fallback (see the last card).</span></li>
+      <li><span class="req">Port this repo, not sudoku-rust-api</span><span class="chip ok">Settled</span><span class="ev">This repo is already on <code>sudoku</code> 0.8 / <code>rand</code> 0.8 / <code>base64</code> 0.22. The Vercel repo is on <code>rand</code> 0.5 and would need those upgrades first.</span></li>
+      <li><span class="req">What happens to <code>metrics.nanos</code></span><span class="chip warn">Your call</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The plan keeps the fields and reports 0 so clients don't break. The alternative is to remove them.</span></li>
+      <li><span class="req">The <code>platform</code> attribute in <code>index.html</code></span><span class="chip warn">Check</span><span class="ev">The page renders <code>&lt;proto-sudoku platform="local"/&gt;</code>. Check how <code>proto-sudoku-wc</code> maps <code>platform</code> to an API URL. The page should call its own origin, and there may be no <code>cloudflare</code> value yet.</span></li>
+    </ul>
+  </section>
+
+  <section class="card" aria-label="Checklist">
+    <div class="card-head">
+      <div class="who"><span class="order">Progress · ticks are saved</span><h2>Checklist</h2><span class="title">Tick as you go; Claude can tick these too</span></div>
+      <div class="chips"><span class="chip quiet" id="cl-chip">0 / 0 done</span></div>
+    </div>
+    <ul class="checklist" id="cl">
+      <li class="group">Before step 01 · decisions</li>
+      <li><input type="checkbox" id="d-nanos" disabled><label for="d-nanos">Decide <code>metrics.nanos</code>: report 0, or remove the fields</label><span class="chip warn">Your call</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="d-platform" disabled><label for="d-platform">Confirm the <code>platform</code> value <code>proto-sudoku-wc</code> needs to call its own origin</label><span class="chip warn">Check</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 01 · prep</li>
+      <li><input type="checkbox" id="s1-branch" disabled><label for="s1-branch">Branch <code>cloudflare-workers</code> created</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s1-target" disabled><label for="s1-target"><code>wasm32-unknown-unknown</code> target installed</label><span class="chip quiet">Local</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s1-login" disabled><label for="s1-login"><code>npx wrangler login</code> done</label><span class="chip quiet">Local</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 02 · Cargo.toml</li>
+      <li><input type="checkbox" id="s2-versions" disabled><label for="s2-versions">Checked the current <code>worker</code> version, Router param syntax and <code>worker-build</code> output path</label><span class="chip quiet">Research</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s2-cargo" disabled><label for="s2-cargo">Actix removed. <code>cargo tree -i getrandom</code> shows only 0.2 with <code>js</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 03 · src/lib.rs</li>
+      <li><input type="checkbox" id="s3-lib" disabled><label for="s3-lib"><code>src/lib.rs</code> written and builds for <code>wasm32-unknown-unknown</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 04 · static page</li>
+      <li><input type="checkbox" id="s4-move" disabled><label for="s4-move"><code>index.html</code> moved to <code>public/</code>, <code>src/main.rs</code> removed</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s4-scripts" disabled><label for="s4-scripts"><code>.update</code> and <code>.wc-loader</code> both write <code>public/index.html</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s4-template" disabled><label for="s4-template"><code>platform</code> attribute set in <code>.template.html</code> and <code>public/index.html</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 05 · wrangler.jsonc</li>
+      <li><input type="checkbox" id="s5-config" disabled><label for="s5-config"><code>wrangler.jsonc</code> added with the checked <code>main</code> path</label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s5-ignore" disabled><label for="s5-ignore"><code>build/</code> and <code>.wrangler/</code> added to <code>.gitignore</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 06 · local test</li>
+      <li><input type="checkbox" id="s6-routes" disabled><label for="s6-routes"><code>/</code> serves the page. <code>/api/puzzle</code>, <code>/api/bob</code> and <code>/alice</code> return the expected JSON</label><span class="chip quiet">Test</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s6-cors" disabled><label for="s6-cors">OPTIONS and a 404 both carry CORS headers</label><span class="chip quiet">Test</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s6-ref" disabled><label for="s6-ref">One saved response: <code>ref</code> decodes to a solution matching every clue</label><span class="chip quiet">Test</span><span class="cnote" hidden></span></li>
+      <li class="group">Step 07 · ship · ask first</li>
+      <li><input type="checkbox" id="s7-deploy" disabled><label for="s7-deploy"><code>npx wrangler deploy</code>. The workers.dev URL returns <code>"tag": "cloudflare"</code></label><span class="chip warn">Live change</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s7-remove" disabled><label for="s7-remove"><code>Procfile</code> and <code>app.json</code> removed</label><span class="chip warn">Ask first</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s7-readme" disabled><label for="s7-readme">README usage, badges and links updated, plus <code>cSpell.json</code></label><span class="chip quiet">Repo</span><span class="cnote" hidden></span></li>
+      <li><input type="checkbox" id="s7-merge" disabled><label for="s7-merge"><code>cloudflare-workers</code> merged into <code>main</code></label><span class="chip warn">Your call</span><span class="cnote" hidden></span></li>
+    </ul>
+    <p class="cl-status" id="cl-status"></p>
+  </section>
+
+  <section class="stack" aria-label="Steps">
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 01 · prep</span><h2>Branch and toolchain</h2><span class="title">The wasm target isn't installed yet</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">Only <code>aarch64-apple-darwin</code> is installed, and Wrangler isn't installed globally, so run it through <code>npx</code>. The build command in step 05 installs <b>worker-build</b>, which compiles the crate and generates the JavaScript wrapper.</p>
+      <div class="msg">
+        <pre class="code" id="s1">git switch -c cloudflare-workers
+rustup target add wasm32-unknown-unknown
+npx wrangler --version
+npx wrangler login</pre>
+        <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s1">Copy commands</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 02 · Cargo.toml</span><h2>Swap Actix for worker</h2><span class="title">A library crate compiled to cdylib</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">Remove <code>actix-web</code>, <code>actix-cors</code> and <code>actix-files</code>. <b><code>getrandom</code> needs the <code>js</code> feature</b> or <code>rand</code> won't build for WebAssembly. <code>sudoku</code> 0.8 pulls in <code>rand</code> 0.8, which uses <code>getrandom</code> 0.2. Today the lockfile also has <code>getrandom</code> 0.4, but only through <code>actix-http</code>, so it disappears with Actix. Confirm that with <code>cargo tree -i getrandom</code>. The new file also moves from <code>edition = "2018"</code> to 2021 and drops <code>authors</code>. Neither is needed for the port, so keep <code>authors</code> if you want it.</p>
+      <div class="msg">
+        <pre class="code" id="s2">[package]
+name = "rust-sudoku-api"
+version = "0.2.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = "0.6"        # check the current version with: cargo search worker
+base64 = "0.22"
+serde_json = "1"
+sudoku = "0.8"
+getrandom = { version = "0.2", features = ["js"] }
+
+[profile.release]
+opt-level = "s"
+lto = true</pre>
+        <div class="msg-bar"><span class="len">Cargo.toml</span><button class="copy" type="button" data-copy="s2">Copy file</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 03 · src/lib.rs</span><h2>Rewrite the handlers</h2><span class="title">Replaces src/main.rs</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">The puzzle logic is the same, minus the timers and the <code>println!</code>. <code>fetch</code> adds CORS headers to <b>every response, the router's 404s included</b>, which is what <code>Cors::permissive()</code> did. Delete <code>src/main.rs</code>. You don't need a <code>/</code> route, because Static Assets serves <code>index.html</code> before the Worker runs.</p>
+      <dl><dt>Routes</dt><dd><code>/api/puzzle</code> · <code>/api/:name</code> · <code>/:name</code> · OPTIONS on any path</dd><dt>Tag</dt><dd><code>"cloudflare"</code> (was <code>"platform"</code>)</dd></dl>
+      <div class="msg">
+        <pre class="code" id="s3">use base64::{engine::general_purpose, Engine as _};
+use serde_json::json;
+use sudoku::Sudoku;
+use worker::*;
+
+const PLATFORM: &amp;str = "cloudflare";
+
+fn with_cors(mut resp: Response) -&gt; Result&lt;Response&gt; {
+    let h = resp.headers_mut();
+    h.set("Access-Control-Allow-Origin", "*")?;
+    h.set("Access-Control-Allow-Headers", "*")?;
+    h.set("Access-Control-Allow-Methods", "GET,OPTIONS")?;
+    Ok(resp)
+}
+
+fn greet(name: Option&lt;&amp;String&gt;) -&gt; Result&lt;Response&gt; {
+    let name = name.map(String::as_str).unwrap_or("World");
+    Response::from_json(&amp;json!({ "hello": name }))
+}
+
+fn puzzle() -&gt; Result&lt;Response&gt; {
+    let puzzle = format!("{}", Sudoku::generate().to_str_line());
+    let blanks = puzzle.matches('.').count();
+    let line = Sudoku::from_str_line(&amp;puzzle)
+        .ok()
+        .and_then(|s| s.solution())
+        .map(|s| format!("{}", s))
+        .unwrap_or_default();
+
+    let data = json!({
+        "metrics": {
+            "counts": { "blanks": blanks, "clues": 81 - blanks },
+            // Workers freezes the clock while code runs, so timings always read 0.
+            "nanos": { "generate": 0, "solve": 0 }
+        },
+        "puzzle": puzzle,
+        "ref": general_purpose::STANDARD.encode(line),
+        "tag": PLATFORM
+    });
+    Response::from_json(&amp;data)
+}
+
+#[event(fetch)]
+async fn fetch(req: Request, env: Env, _ctx: Context) -&gt; Result&lt;Response&gt; {
+    let resp = if req.method() == Method::Options {
+        Response::empty()?
+    } else {
+        Router::new()
+            .get("/api/puzzle", |_, _| puzzle())
+            .get("/api/:name", |_, ctx| greet(ctx.param("name")))
+            .get("/:name", |_, ctx| greet(ctx.param("name")))
+            .run(req, env)
+            .await?
+    };
+    // One place for CORS, so 404s from the router get the headers too.
+    with_cors(resp)
+}</pre>
+        <div class="msg-bar"><span class="len">src/lib.rs</span><button class="copy" type="button" data-copy="s3">Copy file</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 04 · static page</span><h2>Move index.html to public/</h2><span class="title">And update both scripts that regenerate it</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why"><code>.update</code> and <code>.wc-loader</code> both rebuild <code>index.html</code> from <code>.template.html</code> by bumping web-component versions. Each one's last copy step writes to the repo root, so <b>point both at <code>public/index.html</code></b> or the next bump will recreate the old file.</p>
+      <dl><dt>.update</dt><dd><code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code></dd><dt>.wc-loader</dt><dd>Line 72, the same change: <code>cp $BAK2 index.html</code> → <code>cp $BAK2 public/index.html</code></dd><dt>Template</dt><dd>Set the <code>platform</code> attribute in <code>.template.html</code> once you've confirmed the value (see Decisions)</dd></dl>
+      <div class="msg">
+        <pre class="code" id="s4">mkdir -p public
+git mv index.html public/index.html
+git rm src/main.rs</pre>
+        <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s4">Copy commands</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 05 · wrangler.jsonc</span><h2>Worker config</h2><span class="title">Build hook plus static assets</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">Check <b><code>main</code> against the workers-rs template</b>: recent <code>worker-build</code> versions output <code>build/index.js</code>, and older ones output <code>build/worker/shim.mjs</code>. Also add <b><code>build/</code> and <code>.wrangler/</code></b> to <code>.gitignore</code>. <code>wrangler dev</code> creates <code>.wrangler/</code> for its local state, and today the file only ignores <code>/target</code>.</p>
+      <div class="msg">
+        <pre class="code" id="s5">{
+  "name": "rust-sudoku-api",
+  "main": "build/index.js",
+  "compatibility_date": "2026-11-01",
+  "build": {
+    "command": "cargo install -q worker-build &amp;&amp; worker-build --release"
+  },
+  "assets": { "directory": "./public" }
+}</pre>
+        <div class="msg-bar"><span class="len">wrangler.jsonc</span><button class="copy" type="button" data-copy="s5">Copy file</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 06 · local test</span><h2>Run it with wrangler dev</h2><span class="title">Replaces cargo run on :8080</span></div>
+        <div class="chips"><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">Check all four routes and the CORS preflight. Decode <code>ref</code> and confirm it's an 81-digit solution that agrees with every clue in <code>puzzle</code>. Every request makes a new puzzle, so <b>save one response</b> and read both fields from it.</p>
+      <div class="msg">
+        <pre class="code" id="s6">npx wrangler dev
+curl -s localhost:8787/api/puzzle &gt; /tmp/p.json
+jq . /tmp/p.json
+jq -r .puzzle /tmp/p.json
+jq -r .ref /tmp/p.json | base64 -d; echo
+curl -si localhost:8787/nope/nope | grep -i 'HTTP/\|access-control'
+curl -s localhost:8787/api/bob
+curl -s localhost:8787/alice
+curl -si -X OPTIONS localhost:8787/api/puzzle | grep -i access-control
+open http://localhost:8787/</pre>
+        <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s6">Copy commands</button></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <div class="who"><span class="order">Step 07 · ship</span><h2>Deploy and clean up</h2><span class="title">Ask before this step</span></div>
+        <div class="chips"><span class="chip warn">Live change</span><span class="chip quiet">Not started</span></div>
+      </div>
+      <p class="why">Deploying publishes the Worker at <b>rust-sudoku-api.&lt;subdomain&gt;.workers.dev</b>. After it works, delete the Heroku leftovers and update the README's usage section and badges.</p>
+      <dl><dt>Remove</dt><dd><code>Procfile</code>, <code>app.json</code></dd><dt>README</dt><dd>Usage: <code>cargo run</code> → <code>npx wrangler dev</code>. Swap the <code>actix-cors</code> and <code>actix-web</code> badges (lines 7–8) for <code>worker</code>. Point the <code>[local]</code> and <code>[puzzle]</code> links (lines 81–82) at <code>localhost:8787</code> and add the workers.dev URL.</dd><dt>Also</dt><dd><code>cSpell.json</code> words</dd></dl>
+      <div class="msg">
+        <pre class="code" id="s7">npx wrangler deploy
+curl -s https://rust-sudoku-api.&lt;subdomain&gt;.workers.dev/api/puzzle | jq .tag
+git rm Procfile app.json</pre>
+        <div class="msg-bar"><span class="len">shell</span><button class="copy" type="button" data-copy="s7">Copy commands</button></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="also" aria-label="Gotchas">
+    <h2>If something breaks</h2>
+    <ul>
+      <li><b>"time not implemented on this platform" panic.</b> Something still calls <code>std::time::Instant</code> or <code>SystemTime</code>. Remove it, or use <code>worker::Date::now()</code>.</li>
+      <li><b>getrandom build error mentioning wasm32-unknown-unknown.</b> The <code>js</code> feature is missing, or a second <code>getrandom</code> version crept in. Run <code>cargo tree -i getrandom</code>.</li>
+      <li><b>Every <code>/api/:name</code> request returns 404.</b> Newer router versions use <code>{name}</code> instead of <code>:name</code>.</li>
+      <li><b>"/" returns JSON <code>{"hello":"..."}</code> instead of the page.</b> The assets directory is wrong, or <code>run_worker_first</code> is set.</li>
+      <li><b>Error 1102, CPU limit exceeded.</b> This is unlikely at about 0.3 ms per puzzle, but a debug build is much slower. Make sure the build uses <code>--release</code>.</li>
+    </ul>
+  </section>
+
+  <article class="card elsewhere" aria-label="Fallback">
+    <div class="card-head">
+      <div class="who"><span class="order">Fallback · if wasm fights back</span><h2>Cloudflare Containers</h2><span class="title">Run the Actix binary unchanged</span></div>
+      <div class="chips"><span class="chip pre">Paid plan</span><span class="chip quiet">Not chosen</span></div>
+    </div>
+    <p class="why">This keeps <code>main.rs</code> as it is, and the nanosecond timings stay real. You add a multi-stage <code>Dockerfile</code> that copies <code>index.html</code> into the image's working directory, a small TypeScript Worker that forwards requests to the container on port 8080, and a <code>wrangler.jsonc</code> with a <code>containers</code> block. The costs are the <b>$5/month Workers Paid plan</b> and container cold starts.</p>
+  </article>
+
+  </main>
+
+  <footer>Written after comparing the Vercel deployment (eswat2/sudoku-rust-api, vercel_lambda) with this local Actix server. Sources: both repos' Cargo.toml, Cargo.lock and source; workers-rs and Workers Static Assets docs. Check crate and template versions at the time of the port.</footer>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, opts=document.querySelectorAll(".theme-opt");
+  function mark(c){opts.forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.choice===c))})}
+  var cur="auto";try{cur=localStorage.getItem("outreach-theme")||"auto"}catch(e){}
+  mark(cur);
+  opts.forEach(function(b){b.addEventListener("click",function(){
+    var c=b.dataset.choice;
+    if(c==="auto")root.removeAttribute("data-theme");else root.setAttribute("data-theme",c);
+    try{if(c==="auto")localStorage.removeItem("outreach-theme");else localStorage.setItem("outreach-theme",c)}catch(e){}
+    mark(c);
+  })});
+  document.querySelectorAll(".len[data-for]").forEach(function(el){
+    el.textContent=document.getElementById(el.dataset.for).textContent.length+" characters";
+  });
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.dataset.label=btn.textContent;
+    btn.addEventListener("click",function(){
+      var pre=document.getElementById(btn.dataset.copy), text=pre.textContent;
+      function ok(){btn.textContent="Copied";btn.classList.add("done");setTimeout(function(){btn.textContent=btn.dataset.label;btn.classList.remove("done")},1600)}
+      function fallback(){var r=document.createRange();r.selectNodeContents(pre);var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent="Selected, press Copy"}
+      try{navigator.clipboard.writeText(text).then(ok,fallback)}catch(e){fallback()}
+    });
+  });
+})();
+</script>
+<script>
+(async function(){
+  var list=document.getElementById("cl"), status=document.getElementById("cl-status"), chip=document.getElementById("cl-chip");
+  var boxes=[].slice.call(list.querySelectorAll("input[type=checkbox]"));
+  var state={}, canWrite=true, pending={};
+  function paint(){
+    var n=0;
+    boxes.forEach(function(b){
+      var s=state[b.id]||{}, li=b.closest("li"), note=li.querySelector(".cnote");
+      if(!pending[b.id])b.checked=!!s.done;
+      if(b.checked)n++;
+      li.classList.toggle("done",b.checked);
+      note.textContent=s.note?String(s.note):"";
+      note.hidden=!s.note;
+    });
+    chip.textContent=n+" / "+boxes.length+" done";
+    chip.className="chip "+(n===0?"quiet":n===boxes.length?"ok":"pre");
+  }
+  paint();
+  status.textContent="Loading saved ticks…";
+  var timer=setTimeout(function(){status.textContent="Saved ticks didn't load. The list is read-only for now."},10000);
+  var db=null;
+  try{db=window.claude&&claude.use?await claude.use("db"):null}catch(e){db=null}
+  if(!db){clearTimeout(timer);status.textContent="Ticks are saved only when this page is opened on claude.ai while signed in.";return}
+  try{var user=await claude.use("user");if(user&&(await user.can("data.write"))===false)canWrite=false}catch(e){}
+  var col=db.collection("checklist");
+  col.onSnapshot(function(snap){
+    clearTimeout(timer);
+    state={};
+    snap.docs.forEach(function(d){if(d.exists)state[d.id]=d.data()||{}});
+    boxes.forEach(function(b){if(!pending[b.id])b.disabled=!canWrite});
+    status.textContent=canWrite?"":"You can view this checklist but not tick it.";
+    paint();
+  },function(e){
+    clearTimeout(timer);
+    status.textContent="Saved ticks are unavailable ("+((e&&e.code)||"error")+").";
+  });
+  list.addEventListener("change",function(ev){
+    var b=ev.target;if(!b.matches("input[type=checkbox]"))return;
+    var prev=state[b.id]||{};
+    pending[b.id]=true;b.disabled=true;paint();
+    col.doc(b.id).set({done:b.checked,note:prev.note||"",at:new Date().toISOString()}).then(function(){
+      status.textContent="";
+    },function(e){
+      b.checked=!b.checked;
+      status.textContent="Couldn't save that tick ("+((e&&e.code)||"error")+").";
+    }).then(function(){delete pending[b.id];b.disabled=!canWrite;paint()});
+  });
+})();
+</script>
