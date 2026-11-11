@@ -136,7 +136,7 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
 - This project will have a wrangler.jsonc, so use Wrangler (via npx), not the cf CLI.
 - Stop and ask me before running wrangler deploy, and before deleting Procfile or app.json.
 - After step 06, stop and ask before starting step 07.
-- The live checklist is at https://claude.ai/artifact/L5S7Hrw6FohTjdWuswueFU (collection "checklist", one document per item id, body {done, note}). Tick items there with ArtifactData as you finish them, with a short note such as a commit hash.</pre>
+- The live checklist is in the published copy of this page on claude.ai (collection "checklist", one document per item id, body {done, note}). Tick items there with ArtifactData as you finish them, with a short note such as a commit hash.</pre>
       <div class="msg-bar"><span class="len" data-for="handoff"></span><button class="copy" type="button" data-copy="handoff">Copy prompt</button></div>
     </div>
   </section>
@@ -148,9 +148,9 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     </div>
     <ul class="reqs">
       <li><span class="req">Workers (WebAssembly), not Containers</span><span class="chip ok">Settled</span><span class="ev">It runs free, scales to zero and has no cold start. <code>cargo bench</code> puts a full puzzle (generate + solve) at about 82 µs natively, or roughly 0.25 ms at a pessimistic 3× for wasm, well inside the free plan's 10 ms of CPU per request. Containers stay as the fallback (see the last card).</span></li>
-      <li><span class="req">Port this repo, not sudoku-rust-api</span><span class="chip ok">Settled</span><span class="ev">This repo is already on <code>sudoku</code> 0.8 / <code>rand</code> 0.8 / <code>base64</code> 0.22. The Vercel repo is on <code>rand</code> 0.5 and would need those upgrades first.</span></li>
+      <li><span class="req">Port this repo, not the Vercel version</span><span class="chip ok">Settled</span><span class="ev">This repo is already on <code>sudoku</code> 0.8 / <code>rand</code> 0.8 / <code>base64</code> 0.22. The Vercel version is on <code>rand</code> 0.5 and would need those upgrades first.</span></li>
       <li><span class="req"><code>metrics.nanos</code> removed; timings move to <code>cargo bench</code></span><span class="chip ok">Settled</span><span class="ev"><code>std::time::Instant</code> panics in WebAssembly, and Workers freezes the clock while your code runs, so any timer reads 0. The response now has only <code>metrics.counts</code>. The component's <code>PuzzleApiData</code> type marks <code>nanos</code> optional as of 0.1.340, and it only ever read <code>puzzle</code> and <code>ref</code>. <code>benches/puzzle.rs</code> (Criterion) times <code>generate</code>, <code>solve</code> and <code>new_puzzle</code> natively. Native times were about 80 µs, 2 µs and 82 µs on 2026-11-10.</span></li>
-      <li><span class="req">The page calls its own origin: <code>platform="cloudflare"</code></span><span class="chip ok">Settled</span><span class="ev"><code>proto-sudoku-wc</code> 0.1.339 knew only <code>local</code> (<code>http://localhost:8080/api</code>), <code>netlify</code> and <code>vercel</code>, and fell back to Vercel for anything else. <b>0.1.340 adds <code>cloudflare: '/api'</code></b> in <code>src/utils/store.ts</code>. The path is relative, so it follows whatever host serves the page, including a custom domain later. The component sends <code>X-Requested-With</code> and <code>X-Custom-Header</code>, so cross-origin callers still rely on the CORS preflight.</span></li>
+      <li><span class="req">The page calls its own origin: <code>platform="cloudflare"</code></span><span class="chip ok">Settled</span><span class="ev"><code>proto-sudoku-wc</code> 0.1.339 knew only <code>local</code> (<code>http://localhost:8080/api</code>), <code>netlify</code> and <code>vercel</code>, and fell back to Vercel for anything else. <b>0.1.340 adds <code>cloudflare: '/api'</code></b>. The path is relative, so it follows whatever host serves the page, including a custom domain later. The component sends <code>X-Requested-With</code> and <code>X-Custom-Header</code>, so cross-origin callers still rely on the CORS preflight.</span></li>
       <li><span class="req">Keep the pinned CDN version, not <code>@latest</code></span><span class="chip ok">Settled</span><span class="ev">The page keeps loading an exact version from jsDelivr (<code>proto-sudoku-wc@0.1.340</code>), and <code>.wc-loader</code> keeps bumping it. Stencil's entry file lazy-loads hashed chunks through the same URL, and jsDelivr caches <code>@latest</code> per file, so <b>after a release the entry file and chunks can come from different versions and fail to load</b>. A pin also gives a review step, a one-line rollback and a commit history of what was served. If running <code>.wc-loader</code> by hand gets old, automate it rather than unpin.</span></li>
     </ul>
   </section>
@@ -387,14 +387,14 @@ git rm Procfile app.json</pre>
         <div class="who"><span class="order">Step 08 · page</span><h2>Point the page at the Worker</h2><span class="title">Needs proto-sudoku-wc 0.1.340 on npm</span></div>
         <div class="chips"><span class="chip ok">Deployed</span></div>
       </div>
-      <p class="why">The component change shipped as <b>proto-sudoku-wc 0.1.340</b>. A tag push runs that repo's <code>publish.yml</code>, which publishes to npm. Once npm has it, set the platform, refresh the cache with <code>nx</code> and run <code>.wc-loader</code> to bump the pin, then redeploy. Run it with <b><code>bash .wc-loader</code></b>, because the file isn't executable. It runs <code>git commit -a</code>, so <b>commit other edits first</b> or they end up in the bump commit.</p>
-      <dl><dt>Repo</dt><dd><code>~/github/ionic/proto-sudoku-wc</code> · <code>f9543c9</code>, released as tag <code>v0.1.340</code> (<code>212b37a</code>)</dd><dt>store.ts</dt><dd><code>platformPrefix.cloudflare = '/api'</code></dd><dt>types.ts</dt><dd><code>metrics.nanos</code> is optional</dd><dt>CLAUDE.md</dt><dd>yarn → pnpm. Release scripts documented (<code>pnpm bump</code> pushes a tag immediately). Cloudflare backend listed.</dd></dl>
+      <p class="why">The component change shipped as <b>proto-sudoku-wc 0.1.340</b>. Once npm has it, set the platform, refresh the cache with <code>nx</code> and run <code>.wc-loader</code> to bump the pin, then redeploy. Run it with <b><code>bash .wc-loader</code></b>, because the file isn't executable. It runs <code>git commit -a</code>, so <b>commit other edits first</b> or they end up in the bump commit.</p>
+      <dl><dt>Component</dt><dd><code>proto-sudoku-wc</code> 0.1.340 on npm: a <code>cloudflare</code> platform that calls <code>/api</code>, and <code>metrics.nanos</code> made optional</dd></dl>
       <div class="msg">
         <pre class="code" id="s8">npm view proto-sudoku-wc version     # wait for 0.1.340
 sed -i '' 's/platform="local"/platform="cloudflare"/' .template.html public/index.html
 git commit -am "page: platform=cloudflare"
 git push -u origin cloudflare-workers  # .wc-loader's push needs an upstream
-nx                                    # refresh ~/github/.wc-cache.json from ~/github/ionic
+nx                                    # refresh the version cache .wc-loader reads
 bash .wc-loader                       # not executable; bumps the pin, commits -a, pushes
 npx wrangler deploy
 open https://rust-sudoku-api.eswat2.workers.dev/</pre>
@@ -425,7 +425,7 @@ open https://rust-sudoku-api.eswat2.workers.dev/</pre>
 
   </main>
 
-  <footer>Written after comparing the Vercel deployment (eswat2/sudoku-rust-api, vercel_lambda) with this local Actix server. Sources: both repos' Cargo.toml, proto-sudoku-wc's <code>src/utils/store.ts</code>, Cargo.lock and source; workers-rs and Workers Static Assets docs. Check crate and template versions at the time of the port.</footer>
+  <footer>Written after comparing the Vercel deployment (vercel_lambda) with this local Actix server. Sources: both versions' Cargo.toml, the proto-sudoku-wc component, Cargo.lock and source; workers-rs and Workers Static Assets docs. Check crate and template versions at the time of the port.</footer>
 </div>
 
 <script>
