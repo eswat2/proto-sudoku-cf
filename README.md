@@ -1,4 +1,4 @@
-# rust-api
+# proto-sudoku-cf
 
 simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
 
