@@ -731,6 +731,11 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <p>Workers Builds had no Rust cache and took 6–7 minutes a push. The script builds locally, ships only a clean <code>main</code> that matches the remote, and tags the deploy with the commit.</p>
           </article>
           <article class="card">
+            <h3>Daily updates</h3>
+            <p class="meta">scripts/update.sh · never deploys</p>
+            <p><code>cargo update</code>, and only if <code>Cargo.lock</code> changed: check the wasm and native builds, then commit and push. Major-version bumps are reported, not applied. Deploys stay a separate, manual step.</p>
+          </article>
+          <article class="card">
             <h3>Two hostnames</h3>
             <p class="meta">custom domain + workers.dev</p>
             <p><code>sudoku.eswat2.app</code> is a Workers Custom Domain, so Cloudflare manages its DNS and certificate. <code>rust-sudoku-api.eswat2.workers.dev</code> stays on too.</p>

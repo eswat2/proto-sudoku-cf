@@ -30,6 +30,7 @@ links in anything committed here: code, docs, commit messages.
 - `benches/puzzle.rs`: Criterion benchmarks for generate, solve and a full
   puzzle (`cargo bench`), run natively.
 - `scripts/deploy.sh`: the only way to deploy (see below).
+- `scripts/update.sh`: the daily dependency update (see "Commands").
 - `scripts/capture-about.mjs`: regenerates the About page screenshots from a
   running `npx wrangler dev`. Usage is in its header.
 - `.template.html`, `.wc-loader` (`.update` is a symlink to it),
@@ -44,7 +45,16 @@ bash scripts/deploy.sh --dry-run    # build and check, no upload
 bash scripts/deploy.sh              # deploy to production
 cargo bench                         # puzzle timings, natively
 cargo outdated --exclude getrandom  # see "Dependencies"
+bash scripts/update.sh --dry-run    # pending updates, changes nothing
+bash scripts/update.sh              # cargo update, check, commit + push
 ```
+
+`scripts/update.sh` has the same clean-`main` guard as `deploy.sh`. It treats
+a changed `Cargo.lock` as the signal, runs the wasm build
+(`wrangler deploy --dry-run`) and the native one (`cargo test`,
+`cargo bench --no-run`), then commits `» cargo update` and pushes. It only
+reports major-version bumps and never deploys. `--quiet` prints nothing when
+there's nothing to do.
 
 The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 `wrangler.jsonc` runs `worker-build --release`, which the first build installs.

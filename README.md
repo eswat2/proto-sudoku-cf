@@ -108,17 +108,21 @@ nx
 bash .wc-loader
 ```
 
-to check for updates:
+to check for updates (changes nothing):
 
 ```
-cargo outdated
+bash scripts/update.sh --dry-run
 ```
 
 to update packages:
 
 ```
-cargo update
+bash scripts/update.sh
 ```
+
+this runs `cargo update`. if `Cargo.lock` changed, it checks the wasm build (`wrangler deploy --dry-run`) and the native one (`cargo test`, `cargo bench --no-run`), then commits `» cargo update` and pushes. it doesn't deploy, so run `bash scripts/deploy.sh` afterwards. it lists major-version bumps but doesn't apply them, because they need a `Cargo.toml` change. `--quiet` prints nothing when there's nothing to do, for a daily runner.
+
+plain `cargo outdated` is noisy here because of the `getrandom` 0.2 pin. use `cargo outdated --exclude getrandom` instead.
 
 ## references:
 
