@@ -159,8 +159,8 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
   under the MIT licence. It runs in the browser and only calls this API over
   HTTP, so it isn't part of the AGPL work.
 - The older local Actix version is in the public
-  [eswat2/rust-sudoku-api][rust-sudoku-api] repo. This licence doesn't
-  cover it.
+  [eswat2/rust-sudoku-api][rust-sudoku-api] repo, which is licensed
+  separately under AGPL-3.0-or-later as well.
 
 
 [app]: https://sudoku.eswat2.app
