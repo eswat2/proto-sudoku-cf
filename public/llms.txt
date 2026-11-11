@@ -42,6 +42,11 @@ API instead of scraping it.
 - metrics.counts: the number of blanks and clues.
 - tag: the platform that served the response.
 
+## Source
+
+- [eswat2/proto-sudoku-cf](https://github.com/eswat2/proto-sudoku-cf): the
+  Worker and this site, AGPL-3.0-or-later (it links the AGPL sudoku crate)
+
 ## Optional
 
 - [eswat2.app](https://eswat2.app): small apps by Richard Hess

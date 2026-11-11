@@ -135,6 +135,33 @@ The serverless version on Vercel is still running...
 
 - [puzzle][puzzle-io] -- _vercel_
 
+## license:
+
+This repo is licensed under [AGPL-3.0-or-later](LICENSE).
+
+**Why AGPL?** Puzzles are generated and solved by the [sudoku][sudoku] crate,
+which is licensed AGPL-3.0. The Worker compiles that crate into its WebAssembly,
+so the Worker as a whole is a work based on it. The AGPL's network clause
+(section 13) says that when such a program is offered to users over a network,
+those users must be able to get its source under the same licence. This public
+repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
+
+**What that means for you:**
+
+- You can read, run, change and redistribute this code.
+- If you run a modified version as a public service, you have to offer its
+  users your source under AGPL-3.0-or-later too.
+- There's no warranty. See the [LICENSE](LICENSE) for the full terms.
+
+**What it doesn't cover:**
+
+- The game UI, [proto-sudoku-wc][proto-sudoku-wc], is a separate npm package
+  under the MIT licence. It runs in the browser and only calls this API over
+  HTTP, so it isn't part of the AGPL work.
+- The older local Actix version is in the public
+  [eswat2/rust-sudoku-api][rust-sudoku-api] repo. This licence doesn't
+  cover it.
+
 
 [app]: https://sudoku.eswat2.app
 [app-puzzle]: https://sudoku.eswat2.app/api/puzzle
@@ -146,6 +173,8 @@ The serverless version on Vercel is still running...
 [base64]: https://crates.io/crates/base64
 [serde-json]: https://crates.io/crates/serde_json
 [sudoku]: https://crates.io/crates/sudoku
+[about]: https://sudoku.eswat2.app/about
+[rust-sudoku-api]: https://github.com/eswat2/rust-sudoku-api
 [criterion]: https://crates.io/crates/criterion
 [local]: http://localhost:8787
 [puzzle]: http://localhost:8787/api/puzzle
