@@ -11,7 +11,9 @@
 //
 // BASE overrides the dev server URL (default http://localhost:8787).
 // Loads a fresh puzzle, fills part of it in with the solution, picks an empty
-// cell, then fills the rest and presses Check ?.
+// cell, then fills the rest and presses Check ?. The toolbar's id-<hash> label
+// is hidden in every shot: it changes with each code change, and a stale id in
+// a screenshot would only confuse anyone comparing it with their own toolbar.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -72,8 +74,11 @@ const HELPERS = `
 const run = (body) => evaluate(`(async () => { ${HELPERS} ${body} })()`);
 
 // Screenshot just the component, with a little margin.
+// Each render replaces the toolbar, so the id label is hidden again per shot.
+// visibility keeps its space, so the layout matches the live page.
 async function shot(name) {
-  const box = await run(`const r = root().querySelector('#app').getBoundingClientRect();
+  const box = await run(`root().querySelector('.build')?.style.setProperty('visibility', 'hidden');
+    const r = root().querySelector('#app').getBoundingClientRect();
     return { x: r.x, y: r.y, width: r.width, height: r.height };`);
   const pad = 16;
   const { data } = await send('Page.captureScreenshot', {
