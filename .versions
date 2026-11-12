@@ -34,7 +34,7 @@ then
   # IMPORTANT:  strip the double quotes from all the keys...
   KEYS=`jaq "keys[]" ${CACHE} | tr -d '"'`
 
-  echo "------------------------------------------ rust-sudoku-api "
+  echo "------------------------------------------ proto-sudoku-cf "
   echo "--"
 
   for key in ${KEYS}; do

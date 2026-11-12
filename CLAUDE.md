@@ -71,9 +71,11 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   `origin/main`, then tags the deploy with the commit
   (`wrangler deploy --message`). Commit and push first.
 - A deploy is a production change. Ask before running it.
-- **The Worker is named `rust-sudoku-api`, not `proto-sudoku-cf`.** That's
-  on purpose. Renaming it would create a new Worker and change the
-  `rust-sudoku-api.eswat2.workers.dev` address, which is off
+- **The Worker is named `proto-sudoku-cf`.** It was first deployed as
+  `rust-sudoku-api` and renamed in the dashboard (Settings), which keeps its
+  history and custom domain. Rename it the same way, and change `name` in
+  `wrangler.jsonc` to match before the next deploy: a deploy under a name
+  that doesn't exist creates a new Worker. The `workers.dev` address is off
   (`workers_dev: false`, `preview_urls: false`), as on the poker and retro
   apps.
 - `sudoku.eswat2.app` is a Workers Custom Domain set in `wrangler.jsonc`.
