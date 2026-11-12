@@ -80,6 +80,9 @@ then
   then
     git commit -a -m "bump $MODZ"
     git push
+
+    # NOTE:  on Cloudflare, pushing doesn't deploy...
+    printf "%s ${BOLD}not live yet:${RESET} run ${GREEN}bash scripts/deploy.sh${RESET} \n" $PREFIX
   else
     SKIP=true
     # printf "%s skip... [ ${GREEN}%s${RESET} ] \n" $PREFIX "$IDZ"
