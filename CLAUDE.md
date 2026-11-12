@@ -103,7 +103,8 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
 - `public/index.html` is the whole game: one `<proto-sudoku>` custom element
   with Shadow DOM, plain CSS and an inline script. No build step, no
-  dependencies, no CDN. Edit it directly. A cold load is about 7 KB over the wire.
+  dependencies, no CDN. Edit it directly. The file is about 7 KB compressed;
+  a cold load of the live page is about 8.5 KB with headers and favicon.
 - It reproduces the Stencil component `proto-sudoku-wc` (MIT) that the page
   used to load from jsDelivr. **Keep it looking and behaving like that component**:
   - The look is Stencil's Tailwind classes written out as plain CSS. There's

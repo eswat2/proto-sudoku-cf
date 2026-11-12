@@ -98,7 +98,7 @@ times `generate`, `solve` and `new_puzzle` natively with [criterion][criterion] 
 
 ## developer notes:
 
-the game is `public/index.html`: one `<proto-sudoku>` custom element with Shadow DOM, plain CSS and an inline script; a cold load is about 7 KB over the wire. there's nothing to build or bump: edit the file, then restart `npx wrangler dev` (it keeps stale ETags for edited files, so a browser can keep the old page). the toolbar shows `id-<hash>`, a hash of the page's code; `bash scripts/build-id.sh [url]` prints the same id for the file or any server. it reproduces the look and behaviour of the [proto-sudoku-wc][proto-sudoku-wc] Stencil component the page used to load from jsDelivr (about 48 KB in seven requests), down to its saved-game keys, so games in progress carry over.
+the game is `public/index.html`: one `<proto-sudoku>` custom element with Shadow DOM, plain CSS and an inline script; the file is about 7 KB compressed, and a cold load of the live page is about 8.5 KB with headers and favicon. there's nothing to build or bump: edit the file, then restart `npx wrangler dev` (it keeps stale ETags for edited files, so a browser can keep the old page). the toolbar shows `id-<hash>`, a hash of the page's code; `bash scripts/build-id.sh [url]` prints the same id for the file or any server. it reproduces the look and behaviour of the [proto-sudoku-wc][proto-sudoku-wc] Stencil component the page used to load from jsDelivr (about 48 KB in seven requests), down to its saved-game keys, so games in progress carry over.
 
 to check for updates (changes nothing):
 
