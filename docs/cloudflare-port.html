@@ -115,11 +115,12 @@ footer{border-top:1px solid var(--rule);padding-top:1.1rem;color:var(--faint);fo
     </div>
     <h1>Sudoku API Workers Port</h1>
     <p class="lede">A step-by-step plan to move the local Actix server in <code>eswat2/rust-sudoku-api</code> onto Cloudflare Workers with <code>workers-rs</code>, so the Rust code runs as WebAssembly. Steps 01–07 are done on the <code>cloudflare-workers</code> branch, and the API is live on workers.dev. <code>proto-sudoku-wc</code> 0.1.340 adds the <code>cloudflare</code> platform the page needs. What's left: bump the component, set <code>platform="cloudflare"</code>, redeploy, clean up and merge.</p>
-    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>proto-sudoku-cf, from actix-final</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-10</b></span><span>Live <b>sudoku.eswat2.app</b></span><span>Also <b>rust-sudoku-api.eswat2.workers.dev</b></span><span>Status <b>live · merged · deploys via scripts/deploy.sh</b></span></div>
+    <div class="meta"><span>Written <b>2026-11-10</b></span><span>Repo <b>proto-sudoku-cf, from actix-final</b></span><span>Target <b>Workers + Static Assets</b></span><span>Updated <b>2026-11-12</b></span><span>Live <b>sudoku.eswat2.app</b></span><span>Worker <b>proto-sudoku-cf</b></span><span>Status <b>live · merged · deploys via scripts/deploy.sh</b></span></div>
   </header>
 
   <main>
   <p class="note"><b>Work on a branch.</b> This port removes Actix, the <code>Procfile</code> and <code>app.json</code>. Keep <code>main</code> as the working Actix server until the Worker is deployed and answers <code>/api/puzzle</code> correctly.</p>
+  <p class="note info"><b>Since the port.</b> On 2026-11-12 the Worker was renamed from <code>rust-sudoku-api</code> to <code>proto-sudoku-cf</code> in the dashboard (Settings), which kept its deployment history and the <code>sudoku.eswat2.app</code> custom domain. <code>wrangler.jsonc</code> was changed to match in <code>8607d52</code>, so deploys update the renamed Worker. The workers.dev address and Preview URLs are off (<code>575941a</code>), so <code>sudoku.eswat2.app</code> is the only hostname. The steps below keep the names and URLs used at the time.</p>
 
   <section class="card" aria-label="Hand-off prompt">
     <div class="card-head">
