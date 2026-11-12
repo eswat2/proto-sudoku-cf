@@ -1,5 +1,5 @@
 #!/bin/bash
-# Prints the build id the page shows in its toolbar ("build <id>"): the first
+# Prints the id the page shows in its toolbar ("id <hash>"): the first
 # 8 hex characters of a SHA-256 of the page's inline <script>. Usage:
 #
 #   bash scripts/build-id.sh                            # public/index.html

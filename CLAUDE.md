@@ -122,14 +122,14 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 - **One deliberate difference:** every entry is saved as it's made, so a
   reload keeps unchecked entries. Stencil saved `::inputs` only on Check.
 - The toolbar's bottom-right label, where Stencil showed its Tailwind
-  version, reads `build <hash>`: the first 8 hex characters of a SHA-256 of
+  version, reads `id <hash>`: the first 8 hex characters of a SHA-256 of
   the inline script, computed in the browser. It changes whenever the code
   does, so it shows which version a browser is running. Compare it with
   `scripts/build-id.sh`.
 - **Restart `npx wrangler dev` after editing anything in `public/`.**
   Wrangler 4.161 serves the edited file but keeps the ETag it computed at
   startup, so a browser that already has the page gets `304 Not Modified`
-  and keeps running the old copy, even on a normal reload. If the build
+  and keeps running the old copy, even on a normal reload. If the id
   label doesn't match `bash scripts/build-id.sh`, this is why. Deploys
   aren't affected: assets are hashed again on upload.
 - Cells keep Stencil's `cell-<n>` class; `scripts/capture-about.mjs` uses it.

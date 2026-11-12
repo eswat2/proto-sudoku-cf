@@ -45,7 +45,7 @@
       // component proto-sudoku-wc: entries are only checked when you press
       // Check. Adapted from Richard Hess's own MIT-licensed code.
       ;(() => {
-        // The build label is a hash of this script, so it changes whenever
+        // The id label is a hash of this script, so it changes whenever
         // the code does and tells you at a glance which version is running.
         // It fills in a moment after first render (the hash is async).
         let BUILD = ""
@@ -339,7 +339,7 @@ button{border-radius:.375rem;border:1px solid #4e5964;font-weight:700;margin-rig
               (list.length === 81 && !solved
                 ? `<button class="check">Check ?</button>`
                 : "") +
-              `<label class="build">${BUILD ? `build ${BUILD}` : ""}</label>`
+              `<label class="build">${BUILD ? `id ${BUILD}` : ""}</label>`
 
             const alert = (message, lead = ALIEN, salute = "") =>
               `<div class="alert">${lead}${salute ? `<label class="salute">${salute}:</label>` : ""}<label class="msg">${message}</label></div>`
