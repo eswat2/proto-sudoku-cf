@@ -564,7 +564,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <p>The puzzle, the picked cell, and every entry, saved as you make it, so a reload keeps the board as you left it.</p>
           </article>
         </div>
-        <p class="layer-note" style="margin-top:14px;">The whole game is inline in <code>index.html</code>: about 6 KB gzipped, served by the Worker with nothing else to fetch. It replaced the Stencil component <code>proto-sudoku-wc</code>, which loaded about 40 KB from jsDelivr, and keeps its look, its behaviour and its saved-game keys.</p>
+        <p class="layer-note" style="margin-top:14px;">The whole game is inline in <code>index.html</code>, with no framework, no dependencies and no build step: about 7 KB over the wire on a cold load, favicon included. It replaced the Stencil component <code>proto-sudoku-wc</code>, which took about 48 KB in seven requests, mostly from jsDelivr, and it keeps that component's look, behaviour and saved-game keys. The toolbar shows <code>id-</code> and a short hash of the page's code, so you can tell at a glance which version a browser is running.</p>
       </div>
     </section>
 
@@ -648,7 +648,8 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <ul class="fn-list">
               <li><code>fetch()</code> <span class="fn-note">— the router, then CORS</span></li>
               <li><code>puzzle()</code> <span class="fn-note">— builds the JSON</span></li>
-              <li><code>greet()</code> <span class="fn-note">— the demo route</span></li>
+              <li><code>not_found_json()</code> <span class="fn-note">— /api 404s</span></li>
+              <li><code>not_found_page()</code> <span class="fn-note">— the 404 page</span></li>
               <li><code>with_cors()</code></li>
             </ul>
           </div>

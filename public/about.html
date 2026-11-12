@@ -629,6 +629,7 @@
         <span class="eyebrow">same api · new home</span>
         <h2>Rust, at the edge</h2>
         <p>The puzzle API started life as an Actix server on Heroku and went quiet when Heroku's free tier ended. Now the same Rust code is compiled to about <code>300 KB</code> of WebAssembly and runs on Cloudflare Workers, next to the page that calls it. A puzzle takes well under a millisecond to generate, the Worker keeps no state at all, and anyone can call <code>/api/puzzle</code> directly.</p>
+        <p>The page is just as lean. The whole game is one small file, about <code>7 KB</code> over the wire, written as a plain web component with no framework and no build step.</p>
       </div>
       <div class="spec-links">
         <a class="btn-primary" href="/architecture">See the architecture</a>
