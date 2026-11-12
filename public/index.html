@@ -219,14 +219,19 @@ button{border-radius:.375rem;border:1px solid #4e5964;font-weight:700;margin-rig
             bag.set("pick", this.pick ?? null)
           }
 
+          // Every entry is saved as it's made, so a reload keeps the board as
+          // you left it. (Stencil saved entries only on Check.)
+          saveInputs() {
+            bag.set("inputs", this.list.map((c) => c.key).join(""))
+          }
+
           input(key) {
             this.list[this.pick].key = key
+            this.saveInputs()
           }
 
           // Erases every wrong entry without a word; the puzzle counts as
-          // solved only when Check finds all 81 cells right. As in Stencil,
-          // entries are saved here and nowhere else, so a reload drops
-          // anything entered since the last Check.
+          // solved only when Check finds all 81 cells right.
           check() {
             let errors = 0
             let found = 0
@@ -239,7 +244,7 @@ button{border-radius:.375rem;border:1px solid #4e5964;font-weight:700;margin-rig
                 cell.key = "."
               } else found++
             }
-            bag.set("inputs", found ? this.list.map((c) => c.key).join("") : "")
+            this.saveInputs()
             if (!errors && clues + found === 81) this.solved = true
           }
 

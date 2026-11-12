@@ -19,7 +19,7 @@ API instead of scraping it.
 - One Cloudflare Worker. Static files are served by Workers Static Assets;
   the API is Rust compiled to WebAssembly (workers-rs and the sudoku crate).
 - No server-side state. The browser checks the board itself: Check clears
-  wrong entries and keeps right ones. The puzzle and checked entries are saved
+  wrong entries and keeps right ones. The puzzle and every entry are saved
   in localStorage.
 
 ## API

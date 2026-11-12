@@ -561,7 +561,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
           <article class="card">
             <h3>localStorage</h3>
             <p class="meta">survives a reload</p>
-            <p>The puzzle, the picked cell, and the entries that passed a check. Unchecked entries stay in memory only, so a reload drops them.</p>
+            <p>The puzzle, the picked cell, and every entry, saved as you make it, so a reload keeps the board as you left it.</p>
           </article>
         </div>
         <p class="layer-note" style="margin-top:14px;">The whole game is inline in <code>index.html</code>: about 6 KB gzipped, served by the Worker with nothing else to fetch. It replaced the Stencil component <code>proto-sudoku-wc</code>, which loaded about 40 KB from jsDelivr, and keeps its look, its behaviour and its saved-game keys.</p>
@@ -709,7 +709,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <p class="col-label">localStorage — proto-sudoku::</p>
             <div class="chip-row">
               <div class="chip puzzle"><span class="chip-name">data</span><span class="chip-desc">the response</span></div>
-              <div class="chip inputs"><span class="chip-name">inputs</span><span class="chip-desc">checked entries</span></div>
+              <div class="chip inputs"><span class="chip-name">inputs</span><span class="chip-desc">your entries</span></div>
               <div class="chip pick"><span class="chip-name">pick</span><span class="chip-desc">selected cell</span></div>
             </div>
           </div>

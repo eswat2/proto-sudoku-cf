@@ -117,8 +117,10 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   - The fetch matches ky's: a 10s timeout across all tries, and two retries
     (300ms, then 600ms) on a network error or a retryable status.
 - Saved state keeps Stencil's keys and formats, so games carry over:
-  `proto-sudoku::data` (the API response), `::inputs` (81 characters, saved
-  only by Check) and `::pick` (a cell index or `null`).
+  `proto-sudoku::data` (the API response), `::inputs` (81 characters) and
+  `::pick` (a cell index or `null`).
+- **One deliberate difference:** every entry is saved as it's made, so a
+  reload keeps unchecked entries. Stencil saved `::inputs` only on Check.
 - Cells keep Stencil's `cell-<n>` class; `scripts/capture-about.mjs` uses it.
 - It fetches the relative `/api/puzzle`, so the page works on any hostname
   that serves it.
