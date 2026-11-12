@@ -546,12 +546,12 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
     <section class="layer">
       <div class="layer-rail"><span>L1 · CLIENT</span></div>
       <div class="layer-body">
-        <h2>Web Component — proto-sudoku-wc on npm</h2>
+        <h2>Web Component — one file, no build</h2>
         <div class="card-row">
           <article class="card">
             <h3>&lt;proto-sudoku&gt;</h3>
             <p class="meta">the whole game</p>
-            <p>A Stencil and Tailwind component in its own Shadow DOM: the board, the digit buttons, New Puzzle, Check ? and the status line. <code>platform="cloudflare"</code> points it at the relative path <code>/api</code>.</p>
+            <p>A vanilla custom element in its own Shadow DOM, with plain CSS: the board, the digit buttons, New Puzzle, Check ? and the status line. It calls the relative path <code>/api/puzzle</code>.</p>
           </article>
           <article class="card">
             <h3>store</h3>
@@ -564,7 +564,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <p>The puzzle, the picked cell, and the entries that passed a check. Unchecked entries stay in memory only, so a reload drops them.</p>
           </article>
         </div>
-        <p class="layer-note" style="margin-top:14px;">The page loads the component from jsDelivr at an exact version (<code>proto-sudoku-wc@0.1.340</code>). Stencil lazy-loads hashed chunks through the same URL, so <code>@latest</code> could mix files from two releases; <code>.wc-loader</code> bumps the pin instead.</p>
+        <p class="layer-note" style="margin-top:14px;">The whole game is inline in <code>index.html</code>: about 6 KB gzipped, served by the Worker with nothing else to fetch. It replaced the Stencil component <code>proto-sudoku-wc</code>, which loaded about 40 KB from jsDelivr, and keeps its look, its behaviour and its saved-game keys.</p>
       </div>
     </section>
 
@@ -752,7 +752,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
   </main>
 
   <footer class="note">
-    Reflects <code>src/lib.rs</code>, <code>wrangler.jsonc</code>, <code>Cargo.toml</code> and <code>proto-sudoku-wc@0.1.340</code> as of 2026-11-10. <a href="/">Play</a> · <a href="/about">About</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://eswat2.app">eswat2.app</a>
+    Reflects <code>src/lib.rs</code>, <code>wrangler.jsonc</code>, <code>Cargo.toml</code> and <code>public/index.html</code> as of 2026-11-12. <a href="/">Play</a> · <a href="/about">About</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://eswat2.app">eswat2.app</a>
   </footer>
 </div>
 

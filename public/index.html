@@ -4,21 +4,14 @@
     <meta charset="utf-8" />
     <meta
       name="description"
-      content="prototype - a simple Web Component Sudoku demo generated with Stencil"
+      content="prototype - a simple Sudoku demo, one vanilla Web Component in a single file"
     />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>proto-sudoku 0.1.342</title>
-    <link 
-      rel="stylesheet" 
-      href="https://cdn.jsdelivr.net/npm/proto-sudoku-wc@0.1.342/dist/proto-sudoku-wc/props.css" />
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/proto-sudoku-wc@0.1.342/dist/proto-sudoku-wc/proto-sudoku-wc.esm.js"
-    ></script>
+    <title>proto-sudoku</title>
     <style>
       /* A muted page with the game on a white card. The component has no
          background of its own, so its cells take the card's white. */
@@ -44,7 +37,305 @@
   </head>
   <body>
     <main>
-      <proto-sudoku platform="cloudflare"></proto-sudoku>
+      <proto-sudoku></proto-sudoku>
     </main>
+    <script>
+      // <proto-sudoku>: the game as one vanilla custom element. No build, no
+      // dependencies. It reproduces the look and behaviour of the Stencil
+      // component proto-sudoku-wc: entries are only checked when you press
+      // Check. Adapted from Richard Hess's own MIT-licensed code.
+      ;(() => {
+        // Saved state uses the Stencil keys and formats, so a game in
+        // progress on this origin carries over.
+        const PREFIX = "proto-sudoku::"
+        const bag = {
+          get(key) {
+            try {
+              const json = localStorage.getItem(PREFIX + key)
+              return json ? JSON.parse(json) : undefined
+            } catch {
+              return undefined
+            }
+          },
+          set(key, value) {
+            try {
+              localStorage.setItem(PREFIX + key, JSON.stringify(value))
+            } catch {}
+          },
+        }
+
+        // Each cell's row, column and box peers, worked out once.
+        const PEERS = Array.from({ length: 81 }, (_, i) => {
+          const r = Math.floor(i / 9)
+          const c = i % 9
+          const b = Math.floor(r / 3) * 3 + Math.floor(c / 3)
+          const peers = []
+          for (let j = 0; j < 81; j++) {
+            const rj = Math.floor(j / 9)
+            const cj = j % 9
+            const bj = Math.floor(rj / 3) * 3 + Math.floor(cj / 3)
+            if (j !== i && (rj === r || cj === c || bj === b)) peers.push(j)
+          }
+          return peers
+        })
+
+        // What the Stencil build got from ky: a 10s timeout across all tries,
+        // and two retries (after 300ms, then 600ms) on a network error or a
+        // retryable status.
+        const RETRY = [408, 413, 429, 500, 502, 503, 504]
+        async function getWithRetry(url) {
+          const signal = AbortSignal.timeout(10000)
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const res = await fetch(url, { signal })
+              if (res.ok || attempt === 2 || !RETRY.includes(res.status)) return res
+            } catch (err) {
+              if (err.name === "TimeoutError") {
+                throw new Error(`Request timed out: GET ${url}`)
+              }
+              if (attempt === 2) throw err
+            }
+            await new Promise((r) => setTimeout(r, 300 * 2 ** attempt))
+          }
+        }
+
+        const icon = (body, attrs = "") =>
+          `<svg width="24" height="24" viewBox="0 0 24 24" role="img" aria-label="title"${attrs}>${body}<path d="M0 0h24v24H0z" fill="none"/></svg>`
+        const FINGERPRINT = icon(
+          `<title>eswat2</title><g fill="currentColor"><path d="M17.81,4.47C17.73,4.47 17.65,4.45 17.58,4.41C15.66,3.42 14,3 12,3C10.03,3 8.15,3.47 6.44,4.41C6.2,4.54 5.9,4.45 5.76,4.21C5.63,3.97 5.72,3.66 5.96,3.53C7.82,2.5 9.86,2 12,2C14.14,2 16,2.47 18.04,3.5C18.29,3.65 18.38,3.95 18.25,4.19C18.16,4.37 18,4.47 17.81,4.47M3.5,9.72C3.4,9.72 3.3,9.69 3.21,9.63C3,9.47 2.93,9.16 3.09,8.93C4.08,7.53 5.34,6.43 6.84,5.66C10,4.04 14,4.03 17.15,5.65C18.65,6.42 19.91,7.5 20.9,8.9C21.06,9.12 21,9.44 20.78,9.6C20.55,9.76 20.24,9.71 20.08,9.5C19.18,8.22 18.04,7.23 16.69,6.54C13.82,5.07 10.15,5.07 7.29,6.55C5.93,7.25 4.79,8.25 3.89,9.5C3.81,9.65 3.66,9.72 3.5,9.72M9.75,21.79C9.62,21.79 9.5,21.74 9.4,21.64C8.53,20.77 8.06,20.21 7.39,19C6.7,17.77 6.34,16.27 6.34,14.66C6.34,11.69 8.88,9.27 12,9.27C15.12,9.27 17.66,11.69 17.66,14.66A0.5,0.5 0 0,1 17.16,15.16A0.5,0.5 0 0,1 16.66,14.66C16.66,12.24 14.57,10.27 12,10.27C9.43,10.27 7.34,12.24 7.34,14.66C7.34,16.1 7.66,17.43 8.27,18.5C8.91,19.66 9.35,20.15 10.12,20.93C10.31,21.13 10.31,21.44 10.12,21.64C10,21.74 9.88,21.79 9.75,21.79M16.92,19.94C15.73,19.94 14.68,19.64 13.82,19.05C12.33,18.04 11.44,16.4 11.44,14.66A0.5,0.5 0 0,1 11.94,14.16A0.5,0.5 0 0,1 12.44,14.66C12.44,16.07 13.16,17.4 14.38,18.22C15.09,18.7 15.92,18.93 16.92,18.93C17.16,18.93 17.56,18.9 17.96,18.83C18.23,18.78 18.5,18.96 18.54,19.24C18.59,19.5 18.41,19.77 18.13,19.82C17.56,19.93 17.06,19.94 16.92,19.94M14.91,22C14.87,22 14.82,22 14.78,22C13.19,21.54 12.15,20.95 11.06,19.88C9.66,18.5 8.89,16.64 8.89,14.66C8.89,13.04 10.27,11.72 11.97,11.72C13.67,11.72 15.05,13.04 15.05,14.66C15.05,15.73 16,16.6 17.13,16.6C18.28,16.6 19.21,15.73 19.21,14.66C19.21,10.89 15.96,7.83 11.96,7.83C9.12,7.83 6.5,9.41 5.35,11.86C4.96,12.67 4.76,13.62 4.76,14.66C4.76,15.44 4.83,16.67 5.43,18.27C5.53,18.53 5.4,18.82 5.14,18.91C4.88,19 4.59,18.87 4.5,18.62C4,17.31 3.77,16 3.77,14.66C3.77,13.46 4,12.37 4.45,11.42C5.78,8.63 8.73,6.82 11.96,6.82C16.5,6.82 20.21,10.33 20.21,14.65C20.21,16.27 18.83,17.59 17.13,17.59C15.43,17.59 14.05,16.27 14.05,14.65C14.05,13.58 13.12,12.71 11.97,12.71C10.82,12.71 9.89,13.58 9.89,14.65C9.89,16.36 10.55,17.96 11.76,19.16C12.71,20.1 13.62,20.62 15.03,21C15.3,21.08 15.45,21.36 15.38,21.62C15.33,21.85 15.12,22 14.91,22Z"/></g>`,
+        )
+        const ALIEN = icon(
+          `<title>alien</title><g fill="currentColor"><path d="M10.31 10.93C11.33 12.57 11.18 14.5 9.96 15.28C8.74 16.04 6.92 15.33 5.89 13.69C4.87 12.05 5.03 10.1 6.25 9.34C7.47 8.58 9.29 9.29 10.31 10.93M12 17.75C14 17.75 14.5 17 14.5 17C14.5 17 14 19 12 19C10 19 9.5 17.03 9.5 17C9.5 17 10 17.75 12 17.75M17.75 9.34C18.97 10.1 19.13 12.05 18.11 13.69C17.08 15.33 15.26 16.04 14.04 15.28C12.82 14.5 12.67 12.57 13.69 10.93C14.71 9.29 16.53 8.58 17.75 9.34M12 20C14.5 20 20 14.86 20 11C20 7.14 16.41 4 12 4C7.59 4 4 7.14 4 11C4 14.86 9.5 20 12 20M12 2C17.5 2 22 6.04 22 11C22 15.08 16.32 22 12 22C7.68 22 2 15.08 2 11C2 6.04 6.5 2 12 2Z"/></g>`,
+          ' class="icon"',
+        )
+        const SPINNER = icon(
+          `<title>loading...</title><g><circle opacity=".25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path opacity=".75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></g>`,
+          ' class="icon spin" fill="none"',
+        )
+
+        // Tailwind's values from the Stencil build, written out as plain CSS.
+        // There is deliberately no reset: like the Stencil build (preflight
+        // off), buttons, the rule and the title start from browser defaults.
+        const CSS = `
+#app{position:relative;max-width:min-content;padding:.125rem;margin:1.5rem;display:flex;flex-direction:column;color:#001f3f;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue','Noto Sans',Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji'}
+.me{position:absolute;top:0;right:0;color:#aaa}
+@media (hover:hover){.me:hover{color:#001f3f}}
+h1{margin:2.75rem 0;text-align:center;text-transform:uppercase;color:#ff4136;font-size:3.75rem;line-height:1;font-weight:100}
+.board{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));grid-template-rows:repeat(9,minmax(0,1fr));overflow:hidden;border:1px solid #001f3f;width:19.125rem;height:19.125rem;font-size:1.125rem;line-height:calc(1.75/1.125)}
+.cell{display:flex;align-items:center;justify-content:center;border:1px solid #aaa}
+.cell:nth-child(9n+3),.cell:nth-child(9n+6){border-right-color:#001f3f!important}
+.cell:nth-child(9n+4),.cell:nth-child(9n+7){border-left-color:#001f3f!important}
+.cell:nth-child(n+19):nth-child(-n+27),.cell:nth-child(n+46):nth-child(-n+54){border-bottom-color:#001f3f!important}
+.cell:nth-child(n+28):nth-child(-n+36),.cell:nth-child(n+55):nth-child(-n+63){border-top-color:#001f3f!important}
+.s{border-color:#ff4136;background:#ff413650;color:#ff4136}
+.f{background:#2ecc4050;font-weight:700}
+.c{background:#ddd}
+.u{color:#ff4136}
+.keys{margin-top:.5rem;display:flex;justify-content:flex-end}
+hr{margin-left:0;margin-right:0}
+.tools{display:flex}
+button{border-radius:.375rem;border:1px solid #4e5964;font-weight:700;margin-right:.25rem;padding:.25rem .5rem;background:oklch(98.5% .002 247.839);color:#001f3f}
+.new,.check{margin-right:.5rem;padding:.5rem .75rem}
+.new{background:#001f3f;color:#fff}
+.check{background:#ffdc00}
+.del{background:#ff4136;color:#fff}
+.m{background:#4e5964;color:#fff}
+.alerts{display:flex;flex-direction:column}
+.alert{margin-top:1.25rem;display:flex;height:24px;align-items:center}
+.icon{margin-right:.5rem}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.salute{margin-right:.25rem;font-weight:700}
+.msg{font-style:italic}`
+
+        class ProtoSudoku extends HTMLElement {
+          connectedCallback() {
+            if (this.shadowRoot) return
+            const root = this.attachShadow({ mode: "open" })
+            root.innerHTML = `<style>${CSS}</style><div id="app"><a class="me" href="https://eswat2.dev" aria-label="eswat2" target="blank" title="eswat2">${FINGERPRINT}</a><h1>Sudoku</h1><div class="board"></div><div class="keys"></div><hr><div class="tools"></div><div class="alerts"></div></div>`
+            this.board = root.querySelector(".board")
+            this.keyRow = root.querySelector(".keys")
+            this.tools = root.querySelector(".tools")
+            this.alerts = root.querySelector(".alerts")
+            root.addEventListener("click", (e) => this.onClick(e))
+
+            // Like Stencil, restore the last game but never fetch on load:
+            // a first visit shows an empty board until New Puzzle.
+            this.reset()
+            const data = bag.get("data")
+            if (data) {
+              try {
+                this.load(data, bag.get("inputs"))
+                const pick = bag.get("pick")
+                if (Number.isInteger(pick)) this.select(pick)
+              } catch {
+                this.reset() // unreadable save: start from the empty board
+              }
+            }
+            this.render()
+          }
+
+          reset(loading = false) {
+            this.list = []
+            this.keys = []
+            this.locs = []
+            this.pick = undefined
+            this.loading = loading
+            this.solved = false
+            this.error = undefined
+          }
+
+          // puzzle is 81 characters with "." for blanks; ref is the solution
+          // in base64. A cell is a clue where the two agree.
+          load({ puzzle = "", ref = "" }, inputs = "") {
+            const solution = atob(ref)
+            this.list = [...puzzle].map((key, i) => ({
+              key,
+              value: solution[i],
+              clue: key === solution[i],
+            }))
+            ;[...(inputs || "")].forEach((key, i) => {
+              const cell = this.list[i]
+              if (cell && !cell.clue) cell.key = key
+            })
+          }
+
+          // Clicking the selected cell deselects it. The keypad lists the
+          // digits no peer holds, worked out once at selection, as in Stencil.
+          select(i) {
+            const cell = this.list[i]
+            if (cell && i !== this.pick) {
+              this.pick = i
+              this.locs = PEERS[i]
+              const used = new Set(this.locs.map((j) => this.list[j].key))
+              this.keys = cell.clue
+                ? []
+                : [..."123456789"].filter((k) => !used.has(k))
+            } else {
+              this.pick = undefined
+              this.keys = []
+              this.locs = []
+            }
+            bag.set("pick", this.pick ?? null)
+          }
+
+          input(key) {
+            this.list[this.pick].key = key
+          }
+
+          // Erases every wrong entry without a word; the puzzle counts as
+          // solved only when Check finds all 81 cells right. As in Stencil,
+          // entries are saved here and nowhere else, so a reload drops
+          // anything entered since the last Check.
+          check() {
+            let errors = 0
+            let found = 0
+            let clues = 0
+            for (const cell of this.list) {
+              if (cell.clue) clues++
+              else if (cell.key === ".") continue
+              else if (cell.key !== cell.value) {
+                errors++
+                cell.key = "."
+              } else found++
+            }
+            bag.set("inputs", found ? this.list.map((c) => c.key).join("") : "")
+            if (!errors && clues + found === 81) this.solved = true
+          }
+
+          async refresh() {
+            this.reset(true)
+            bag.set("inputs", "")
+            bag.set("pick", null)
+            this.render()
+            const url = new URL("/api/puzzle", location)
+            try {
+              const res = await getWithRetry(url)
+              if (!res.ok) {
+                throw new Error(
+                  `Request failed with status code ${res.status} ${res.statusText}: GET ${url}`,
+                )
+              }
+              const data = await res.json()
+              bag.set("data", data)
+              this.load(data)
+            } catch (err) {
+              console.log("-- ", err.message)
+              console.log(err)
+              this.error = err.message
+            } finally {
+              this.loading = false
+            }
+            this.render()
+          }
+
+          onClick(e) {
+            const el = e.target.closest(".cell, button")
+            if (!el) return
+            if (el.classList.contains("cell")) {
+              if (this.solved) return
+              this.select([...this.board.children].indexOf(el))
+            } else if (el.dataset.key) this.input(el.dataset.key)
+            else if (el.classList.contains("check")) this.check()
+            else return this.refresh()
+            this.render()
+          }
+
+          render() {
+            const { list, pick, locs, keys, solved, loading, error } = this
+
+            this.board.innerHTML = list
+              .map((cell, i) => {
+                const state =
+                  !solved && i === pick
+                    ? " s"
+                    : !solved && locs.includes(i)
+                      ? " f"
+                      : cell.clue
+                        ? " c"
+                        : cell.key !== "."
+                          ? " u"
+                          : ""
+                return `<label class="cell cell-${i}${state}">${cell.key !== "." ? cell.key : ""}</label>`
+              })
+              .join("")
+
+            const cell = list[pick]
+            const del =
+              !solved && cell && !cell.clue && cell.key !== "."
+                ? `<button class="del" data-key=".">x</button>`
+                : ""
+            this.keyRow.innerHTML =
+              del +
+              (solved ? [] : keys)
+                .map(
+                  (k) =>
+                    `<button${cell.key === k ? ' class="m"' : ""} data-key="${k}">${k}</button>`,
+                )
+                .join("")
+
+            this.tools.innerHTML =
+              `<button class="new">New Puzzle</button>` +
+              (list.length === 81 && !solved
+                ? `<button class="check">Check ?</button>`
+                : "")
+
+            const alert = (message, lead = ALIEN, salute = "") =>
+              `<div class="alert">${lead}${salute ? `<label class="salute">${salute}:</label>` : ""}<label class="msg">${message}</label></div>`
+            const esc = (s) =>
+              String(s).replace(/[&<>"]/g, (ch) => `&#${ch.charCodeAt(0)};`)
+            this.alerts.innerHTML =
+              (!loading && !error && !solved
+                ? alert("Welcome, are you ready to play?...")
+                : "") +
+              (loading ? alert("Loading...", SPINNER) : "") +
+              (error ? alert(esc(error), ALIEN, "ERROR") : "") +
+              (solved ? alert("You solved the puzzle!!") : "")
+          }
+        }
+
+        customElements.define("proto-sudoku", ProtoSudoku)
+      })()
+    </script>
   </body>
 </html>

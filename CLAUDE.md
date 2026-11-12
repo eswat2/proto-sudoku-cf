@@ -6,9 +6,9 @@ Guidance for Claude Code when working in this repository.
 
 `proto-sudoku` on Cloudflare Workers: a single-player sudoku page at
 `sudoku.eswat2.app`, plus the Rust puzzle API it calls. The API is
-`src/lib.rs`, compiled to WebAssembly with workers-rs. The page is the
-`proto-sudoku-wc` web component (MIT, on npm), served from `public/` by
-Workers Static Assets.
+`src/lib.rs`, compiled to WebAssembly with workers-rs. The page is a
+single-file vanilla web component in `public/index.html`, served by Workers
+Static Assets.
 
 It was ported from the local Actix server, which continues as the public
 `eswat2/rust-sudoku-api`. This repo's history starts at a snapshot of that
@@ -36,9 +36,6 @@ links in anything committed here: code, docs, commit messages.
 - `scripts/update.sh`: the daily dependency update (see "Commands").
 - `scripts/capture-about.mjs`: regenerates the About page screenshots from a
   running `npx wrangler dev`. Usage is in its header.
-- `.template.html`, `.wc-loader` (`.update` is a symlink to it),
-  `.wc-tags.json`, `.versions`, `.tags`: the web-component version bumper
-  (see "The page").
 
 ## Commands
 
@@ -104,15 +101,27 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
 ## The page
 
-- `public/index.html` is generated. Edit `.template.html`, then run
-  `bash .wc-loader` (it isn't executable). It reads a local cache of
-  web-component versions, rewrites `public/index.html`, and runs
-  `git commit -a` and `git push`, so commit other edits first.
-- The component is pinned to an exact version on jsDelivr. Don't switch to
-  `@latest`: Stencil lazy-loads chunks through the same URL, and jsDelivr
-  caches `@latest` per file, so a release can mix versions and break.
-- `platform="cloudflare"` makes the component call the relative `/api`, so
-  the page works on any hostname that serves it.
+- `public/index.html` is the whole game: one `<proto-sudoku>` custom element
+  with Shadow DOM, plain CSS and an inline script. No build step, no
+  dependencies, no CDN. Edit it directly. It's about 6 KB gzipped.
+- It reproduces the Stencil component `proto-sudoku-wc` (MIT) that the page
+  used to load from jsDelivr. **Keep it looking and behaving like that component**:
+  - The look is Stencil's Tailwind classes written out as plain CSS. There's
+    no CSS reset on purpose: buttons, the `hr` and the title start from
+    browser defaults, as they did with Tailwind's preflight off.
+  - Entries are only checked when you press Check ?, which erases wrong ones
+    silently. A full board isn't solved until Check finds every cell right.
+  - The keypad lists the digits no peer holds, worked out when the cell is
+    selected and not refreshed after an entry.
+  - A first visit shows an empty board; nothing is fetched until New Puzzle.
+  - The fetch matches ky's: a 10s timeout across all tries, and two retries
+    (300ms, then 600ms) on a network error or a retryable status.
+- Saved state keeps Stencil's keys and formats, so games carry over:
+  `proto-sudoku::data` (the API response), `::inputs` (81 characters, saved
+  only by Check) and `::pick` (a cell index or `null`).
+- Cells keep Stencil's `cell-<n>` class; `scripts/capture-about.mjs` uses it.
+- It fetches the relative `/api/puzzle`, so the page works on any hostname
+  that serves it.
 
 ## Licence
 
@@ -122,6 +131,8 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   section of `llms.txt` are the section 13 offer of source to network users.
   Keep both, and keep them pointing at this repo.
 - New dependencies must be AGPL-compatible.
+- `public/index.html` adapts the author's own MIT-licensed code, including
+  `proto-sudoku-wc`, and credits it in its header comment. Keep that credit.
 
 ## Keeping the copy true
 

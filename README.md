@@ -2,7 +2,7 @@
 
 simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
 
-- [sudoku.eswat2.app][app] -- _the page, using the [proto-sudoku-wc][proto-sudoku-wc] web component_
+- [sudoku.eswat2.app][app] -- _the page, a single-file vanilla web component (no build, no dependencies)_
 - [sudoku.eswat2.app/api/puzzle][app-puzzle] -- _the api_
 
 ## dependencies:
@@ -34,7 +34,7 @@ the first build installs `worker-build` and needs the wasm target (`rustup targe
 
 a deploy publishes to one hostname, **sudoku.eswat2.app**: a Workers Custom Domain, set in `wrangler.jsonc` (`routes` with `custom_domain: true`). Cloudflare manages its DNS record and certificate, and every `wrangler deploy` re-applies it. A brand-new custom domain can take a few minutes before DNS answers. the workers.dev address and Preview URLs are off (`"workers_dev": false`, `"preview_urls": false`).
 
-the page calls the api with the relative path `/api` (`platform="cloudflare"` in [proto-sudoku-wc][proto-sudoku-wc] 0.1.340+).
+the page calls the api with the relative path `/api/puzzle`, so it works on any hostname that serves it.
 
 to check which commit is live:
 
@@ -98,12 +98,7 @@ times `generate`, `solve` and `new_puzzle` natively with [criterion][criterion] 
 
 ## developer notes:
 
-to update the web component version in `public/index.html`:
-
-```
-nx
-bash .wc-loader
-```
+the game is `public/index.html`: one `<proto-sudoku>` custom element with Shadow DOM, plain CSS and an inline script, about 6 KB gzipped. there's nothing to build or bump; edit the file and reload `npx wrangler dev`. it reproduces the look and behaviour of the [proto-sudoku-wc][proto-sudoku-wc] Stencil component the page used to load from jsDelivr (about 40 KB gzipped), down to its saved-game keys, so games in progress carry over.
 
 to check for updates (changes nothing):
 
@@ -156,9 +151,10 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 
 **What it doesn't cover:**
 
-- The game UI, [proto-sudoku-wc][proto-sudoku-wc], is a separate npm package
-  under the MIT licence. It runs in the browser and only calls this API over
-  HTTP, so it isn't part of the AGPL work.
+- The game UI in `public/index.html` runs in the browser and only calls this
+  API over HTTP, so it isn't part of the AGPL work. It adapts the author's
+  own MIT-licensed code, including [proto-sudoku-wc][proto-sudoku-wc], and
+  credits it in its header.
 - The older local Actix version is in the public
   [eswat2/rust-sudoku-api][rust-sudoku-api] repo, which is licensed
   separately under AGPL-3.0-or-later as well.

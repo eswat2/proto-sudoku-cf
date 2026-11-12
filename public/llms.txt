@@ -4,8 +4,8 @@
 > accounts, no signup step and no key. Puzzles come from a Rust API compiled
 > to WebAssembly on Cloudflare Workers.
 
-The page at / is a web component ([proto-sudoku-wc](https://www.npmjs.com/package/proto-sudoku-wc)
-on npm) and renders nothing useful without JavaScript. Use this file or the
+The page at / is a single-file web component (`<proto-sudoku>`, plain
+JavaScript, no build) and renders nothing useful without JavaScript. Use this file or the
 API instead of scraping it.
 
 ## Pages
