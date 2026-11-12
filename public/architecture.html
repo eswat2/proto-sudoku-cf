@@ -610,9 +610,9 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
               </div>
             </div>
             <div class="route-group">
-              <p class="group-label">Leftover demo — returns {"hello": name}</p>
+              <p class="group-label">Everything else — a real 404</p>
               <div class="route-list">
-                <span class="route">GET /:name</span><span class="route">GET /api/:name</span>
+                <span class="route">/api/* → JSON 404</span><span class="route">/* → 404 page</span><span class="route">POST etc. → 405</span>
               </div>
             </div>
           </div>
@@ -736,9 +736,9 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <p><code>cargo update</code>, and only if <code>Cargo.lock</code> changed: check the wasm and native builds, then commit and push. Major-version bumps are reported, not applied. Deploys stay a separate, manual step.</p>
           </article>
           <article class="card">
-            <h3>Two hostnames</h3>
-            <p class="meta">custom domain + workers.dev</p>
-            <p><code>sudoku.eswat2.app</code> is a Workers Custom Domain, so Cloudflare manages its DNS and certificate. <code>rust-sudoku-api.eswat2.workers.dev</code> stays on too.</p>
+            <h3>One hostname</h3>
+            <p class="meta">custom domain only</p>
+            <p><code>sudoku.eswat2.app</code> is a Workers Custom Domain, so Cloudflare manages its DNS and certificate. The workers.dev address and Preview URLs are off.</p>
           </article>
           <article class="card">
             <h3>Wasm, not Containers</h3>

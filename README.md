@@ -4,7 +4,6 @@ simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssem
 
 - [sudoku.eswat2.app][app] -- _the page, using the [proto-sudoku-wc][proto-sudoku-wc] web component_
 - [sudoku.eswat2.app/api/puzzle][app-puzzle] -- _the api_
-- also on [rust-sudoku-api.eswat2.workers.dev][live] ([api][live-puzzle])
 
 ## dependencies:
 
@@ -33,12 +32,9 @@ the first build installs `worker-build` and needs the wasm target (`rustup targe
 
 > there is no auto-deploy: Cloudflare Workers Builds was tried, but with no Rust cache it took 6-7 minutes per push. Local deploys take about 10-30 seconds (the first scripted deploy took 9 seconds).
 
-a deploy publishes to both hostnames:
+a deploy publishes to one hostname, **sudoku.eswat2.app**: a Workers Custom Domain, set in `wrangler.jsonc` (`routes` with `custom_domain: true`). Cloudflare manages its DNS record and certificate, and every `wrangler deploy` re-applies it. A brand-new custom domain can take a few minutes before DNS answers. the workers.dev address and Preview URLs are off (`"workers_dev": false`, `"preview_urls": false`).
 
-- **sudoku.eswat2.app** -- a Workers Custom Domain, set in `wrangler.jsonc` (`routes` with `custom_domain: true`). Cloudflare manages its DNS record and certificate, and every `wrangler deploy` re-applies it. A brand-new custom domain can take a few minutes before DNS answers.
-- **rust-sudoku-api.eswat2.workers.dev** -- kept on with `"workers_dev": true`.
-
-the page calls the api with the relative path `/api` (`platform="cloudflare"` in [proto-sudoku-wc][proto-sudoku-wc] 0.1.340+), so it works on either hostname.
+the page calls the api with the relative path `/api` (`platform="cloudflare"` in [proto-sudoku-wc][proto-sudoku-wc] 0.1.340+).
 
 to check which commit is live:
 
@@ -62,9 +58,10 @@ npx wrangler triggers deploy
 | `/llms.txt` | _`public/llms.txt`, notes for AI clients_ |
 | `/favicon.svg`, `/favicon.ico` | _the icon; the `.ico` is a 32px render of the svg_ |
 | `/api/puzzle` | _a new puzzle and its solution_ |
-| `/api/:name`, `/:name` | _`{"hello": name}`_ |
+| any other `/api` path | _404, `{"error": "not found"}`_ |
+| any other path | _404, with `public/404.html` as the body, `no-store` and `noindex`_ |
 
-static files win over the Worker: any path matching a file in `public/` never runs the Rust code. every Worker response carries permissive CORS headers, including 404s and `OPTIONS` preflights.
+static files win over the Worker: any path matching a file in `public/` never runs the Rust code. methods other than `GET`, `HEAD` and `OPTIONS` get 405. every Worker response carries permissive CORS headers, including 404s, 405s and `OPTIONS` preflights.
 
 ## output:
 
@@ -169,8 +166,6 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 
 [app]: https://sudoku.eswat2.app
 [app-puzzle]: https://sudoku.eswat2.app/api/puzzle
-[live]: https://rust-sudoku-api.eswat2.workers.dev
-[live-puzzle]: https://rust-sudoku-api.eswat2.workers.dev/api/puzzle
 [proto-sudoku-wc]: https://www.npmjs.com/package/proto-sudoku-wc
 [workers-rs]: https://github.com/cloudflare/workers-rs
 [worker]: https://crates.io/crates/worker

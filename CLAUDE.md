@@ -19,9 +19,12 @@ links in anything committed here: code, docs, commit messages.
 
 ## Layout
 
-- `src/lib.rs`: the whole Worker. Routes are `/api/puzzle`, `/api/:name`,
-  `/:name` and OPTIONS on any path. CORS headers go on every response,
-  router 404s included.
+- `src/lib.rs`: the whole Worker. It answers `/api/puzzle` and OPTIONS on
+  any path. Any other `/api` path is a JSON 404, any other path a 404 with
+  `public/404.html` as the body (`not_found_handling` in `wrangler.jsonc`),
+  and methods other than GET, HEAD and OPTIONS get 405. CORS headers go on
+  every response. The old `/:name` greeting route was removed because it
+  answered 200 to every scanner probe.
 - `public/`: everything the site serves. `index.html` is the game, `about.html` is
   styled like the poker and retro apps' about pages, `architecture.html`
   explains how it's built, and `llms.txt` describes the site and API for LLMs.
@@ -70,7 +73,9 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 - A deploy is a production change. Ask before running it.
 - **The Worker is named `rust-sudoku-api`, not `proto-sudoku-cf`.** That's
   on purpose. Renaming it would create a new Worker and change the
-  `rust-sudoku-api.eswat2.workers.dev` address.
+  `rust-sudoku-api.eswat2.workers.dev` address, which is off
+  (`workers_dev: false`, `preview_urls: false`), as on the poker and retro
+  apps.
 - `sudoku.eswat2.app` is a Workers Custom Domain set in `wrangler.jsonc`.
   If it ever goes missing, `npx wrangler triggers deploy` re-attaches it
   without redeploying code.
@@ -105,7 +110,7 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   `@latest`: Stencil lazy-loads chunks through the same URL, and jsDelivr
   caches `@latest` per file, so a release can mix versions and break.
 - `platform="cloudflare"` makes the component call the relative `/api`, so
-  the page works on either hostname.
+  the page works on any hostname that serves it.
 
 ## Licence
 

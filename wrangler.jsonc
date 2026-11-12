@@ -5,9 +5,16 @@
   "build": {
     "command": "cargo install -q \"worker-build@^0.8\" && worker-build --release"
   },
-  "assets": { "directory": "./public" },
+  // Asset misses still reach the Worker; not_found_handling makes the
+  // binding answer them with public/404.html, which src/lib.rs returns as 404.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
   // custom domain: Cloudflare creates the DNS record + certificate
   "routes": [{ "pattern": "sudoku.eswat2.app", "custom_domain": true }],
-  // keep rust-sudoku-api.eswat2.workers.dev working alongside it
-  "workers_dev": true
+  // Only the custom domain is public, as with the poker and retro apps.
+  "workers_dev": false,
+  "preview_urls": false
 }

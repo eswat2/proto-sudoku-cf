@@ -36,9 +36,22 @@ fn with_cors(mut resp: Response) -> Result<Response> {
     Ok(resp)
 }
 
-fn greet(name: Option<&String>) -> Result<Response> {
-    let name = name.map(String::as_str).unwrap_or("World");
-    Response::from_json(&json!({ "hello": name }))
+fn not_found_json() -> Result<Response> {
+    Ok(Response::from_json(&json!({ "error": "not found" }))?.with_status(404))
+}
+
+// Any path that isn't a file in public/ or /api/puzzle gets a real 404, so a
+// probe like /env.js doesn't look like something that exists. The body is
+// public/404.html, which the assets binding serves for a missing path
+// (not_found_handling in wrangler.jsonc).
+async fn not_found_page(req: &Request, env: &Env) -> Result<Response> {
+    let mut asset = env.assets("ASSETS")?.fetch(req.url()?.to_string(), None).await?;
+    let body = asset.text().await?;
+    let mut resp = Response::from_html(body)?.with_status(404);
+    let h = resp.headers_mut();
+    h.set("Cache-Control", "no-store")?;
+    h.set("X-Robots-Tag", "noindex")?;
+    Ok(resp)
 }
 
 fn puzzle() -> Result<Response> {
@@ -58,16 +71,20 @@ fn puzzle() -> Result<Response> {
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
-    let resp = if req.method() == Method::Options {
-        Response::empty()?
-    } else {
-        Router::new()
-            .get("/api/puzzle", |_, _| puzzle())
-            .get("/api/:name", |_, ctx| greet(ctx.param("name")))
-            .get("/:name", |_, ctx| greet(ctx.param("name")))
-            .run(req, env)
-            .await?
+    let path = req.path();
+    let resp = match req.method() {
+        Method::Options => Response::empty()?,
+        Method::Get | Method::Head => {
+            if path == "/api/puzzle" {
+                puzzle()?
+            } else if path == "/api" || path.starts_with("/api/") {
+                not_found_json()?
+            } else {
+                not_found_page(&req, &env).await?
+            }
+        }
+        _ => Response::empty()?.with_status(405),
     };
-    // One place for CORS, so 404s from the router get the headers too.
+    // One place for CORS, so 404s and 405s get the headers too.
     with_cors(resp)
 }
