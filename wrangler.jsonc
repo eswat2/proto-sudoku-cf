@@ -3,7 +3,7 @@
   "main": "build/index.js",
   "compatibility_date": "2026-11-01",
   "build": {
-    "command": "cargo install -q \"worker-build@^0.8\" && worker-build --release"
+    "command": "cargo install -q \"worker-build@^0.9\" && worker-build --release"
   },
   // Asset misses still reach the Worker; not_found_handling makes the
   // binding answer them with public/404.html, which src/lib.rs returns as 404.
