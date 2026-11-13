@@ -88,6 +88,11 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 - That pin is also why plain `cargo outdated` lists dozens of "Removed" rows:
   in its imagined newest tree, `getrandom` 0.4 has no `js` feature and drops
   the whole wasm-bindgen subtree. Use `--exclude getrandom`.
+- **Move `worker` and `worker-build` together.** The build command in
+  `wrangler.jsonc` installs `worker-build@^0.9` to match `worker = "0.9"`
+  in `Cargo.toml`. On a major bump of `worker`, raise both: `worker-build`
+  refuses a `worker` from another major version, and the wasm build fails.
+  Also update the workers-rs version named in `architecture.html`.
 - `sudoku` 0.8.0 (2023) is the newest release, and the crate is quiet.
 
 ## The API
