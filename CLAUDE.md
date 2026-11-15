@@ -132,7 +132,9 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   sits 3px below the icon's top (`top:.1875rem`), so the capitals and
   underline centre on the fingerprint's ink (about 2-22px down its 24px box);
   centred line boxes looked dropped and top alignment looked high. Padding
-  below keeps each link 24px tall. They use space the title's top margin already
+  below keeps each link 24px tall. The underline is a light `#c5ccd3`, so it
+  marks links on touch screens without weighing on the header; on hover the
+  text and underline turn navy `#001f3f`, as the fingerprint does. They use space the title's top margin already
   reserves, so the page stays 627px tall and still fits a phone without
   scrolling. Don't move them to a footer below the board: that pushes the
   game into scrolling.
