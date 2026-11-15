@@ -128,9 +128,11 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 - **One deliberate difference:** every entry is saved as it's made, so a
   reload keeps unchecked entries. Stencil saved `::inputs` only on Check.
 - **A second deliberate difference:** About and Architecture links sit in
-  the top-left corner, on the fingerprint's row (`.links`, `#4e5964`). Their
-  text is top-aligned with the icon, and padding below makes each link 24px
-  tall, the icon's own box. They use space the title's top margin already
+  the top-left corner, on the fingerprint's row (`.links`, `#4e5964`). The row
+  sits 3px below the icon's top (`top:.1875rem`), so the capitals and
+  underline centre on the fingerprint's ink (about 2-22px down its 24px box);
+  centred line boxes looked dropped and top alignment looked high. Padding
+  below keeps each link 24px tall. They use space the title's top margin already
   reserves, so the page stays 627px tall and still fits a phone without
   scrolling. Don't move them to a footer below the board: that pushes the
   game into scrolling.
