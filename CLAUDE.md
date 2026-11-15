@@ -127,6 +127,11 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
   `::pick` (a cell index or `null`).
 - **One deliberate difference:** every entry is saved as it's made, so a
   reload keeps unchecked entries. Stencil saved `::inputs` only on Check.
+- **A second deliberate difference:** About and Architecture links sit in
+  the top-left corner, on the fingerprint's row (`.links`, `#4e5964`, 28px
+  tall). They use space the title's top margin already reserves, so the page
+  stays 627px tall and still fits a phone without scrolling. Don't move them
+  to a footer below the board: that pushes the game into scrolling.
 - The toolbar's bottom-right label, where Stencil showed its Tailwind
   version, reads `id-<hash>`: the first 8 hex characters of a SHA-256 of
   the inline script, computed in the browser. It changes whenever the code
