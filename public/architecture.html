@@ -531,7 +531,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
       <dl>
         <dt>name</dt><dd>→ proto-sudoku-cf</dd>
         <dt>main</dt><dd>→ build/index.js + index_bg.wasm</dd>
-        <dt>assets</dt><dd>→ ./public (served first)</dd>
+        <dt>assets</dt><dd>→ ./public (served first, except /api/*)</dd>
         <dt>routes</dt><dd>→ sudoku.eswat2.app (custom domain)</dd>
         <dt>dev port</dt><dd>→ :8787 (wrangler dev)</dd>
       </dl>
@@ -580,7 +580,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
           <article class="card">
             <h3>Worker</h3>
             <p class="meta">build/index.js · ~300 KB wasm</p>
-            <p>Everything without a matching file. A small JS shim from <code>worker-build</code> loads the wasm module and hands it each request.</p>
+            <p><code>/api/*</code>, which goes to the Worker first, and everything without a matching file. A small JS shim from <code>worker-build</code> loads the wasm module and hands it each request.</p>
           </article>
           <article class="card">
             <h3>Local</h3>

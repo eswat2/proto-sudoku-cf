@@ -25,6 +25,11 @@ links in anything committed here: code, docs, commit messages.
   and methods other than GET, HEAD and OPTIONS get 405. CORS headers go on
   every response. The old `/:name` greeting route was removed because it
   answered 200 to every scanner probe.
+- `run_worker_first: ["/api/*"]` in `wrangler.jsonc` is needed. Without it,
+  a browser navigation (`Sec-Fetch-Mode: navigate`) that misses an asset is
+  answered with `404.html` by the asset layer and never reaches the Worker,
+  so opening `/api/puzzle` in a tab showed the 404 page while `fetch` and
+  curl got JSON.
 - `public/`: everything the site serves. `index.html` is the game, `about.html` is
   styled like the poker and retro apps' about pages, `architecture.html`
   explains how it's built, and `llms.txt` describes the site and API for LLMs.
