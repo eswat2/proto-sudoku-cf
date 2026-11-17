@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample response · proto-sudoku</title>
+<meta name="description" content="A saved response from the proto-sudoku puzzle API, with what each field means.">
+<link rel="canonical" href="https://sudoku.eswat2.app/api-sample">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(255, 90, 79, 0.13), transparent);
+    --panel: #12161f;
+    --panel-2: #171c26;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text: #e7ebf3;
+    --text-dim: #8b93a7;
+    --text-faint: #5b6178;
+    --accent: #ff6b5e;
+    --accent-soft: rgba(255, 107, 94, 0.16);
+    --accent-2: #ffd43b;
+    --accent-2-soft: rgba(255, 212, 59, 0.16);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --max: 1080px;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f4f5fa;
+    --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+    --panel: #ffffff;
+    --panel-2: #eceff6;
+    --border: rgba(20, 22, 40, 0.09);
+    --border-strong: rgba(20, 22, 40, 0.16);
+    --text: #191c28;
+    --text-dim: #565c72;
+    --text-faint: #8a90a4;
+    --accent: #b8312a;
+    --accent-soft: rgba(208, 57, 46, 0.10);
+    --accent-2: #806000;
+    --accent-2-soft: rgba(154, 116, 0, 0.12);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5fa;
+      --bg-glow: radial-gradient(60% 50% at 50% 0%, rgba(214, 58, 47, 0.08), transparent);
+      --panel: #ffffff;
+      --panel-2: #eceff6;
+      --border: rgba(20, 22, 40, 0.09);
+      --border-strong: rgba(20, 22, 40, 0.16);
+      --text: #191c28;
+      --text-dim: #565c72;
+      --text-faint: #8a90a4;
+      --accent: #b8312a;
+      --accent-soft: rgba(208, 57, 46, 0.10);
+      --accent-2: #806000;
+      --accent-2-soft: rgba(154, 116, 0, 0.12);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg) var(--bg-glow);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ---------- header ---------- */
+
+  header.site {
+    padding: 1.75rem 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+
+  .brand .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 12px 1px var(--accent-2-soft);
+  }
+
+  header.site .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gh-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border: 1px solid var(--border-strong);
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .gh-link:hover {
+    color: var(--text);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .gh-link svg { width: 15px; height: 15px; flex: none; }
+
+  /* ---------- hero ---------- */
+
+  .hero {
+    padding: 3rem 0 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid rgba(255, 107, 94, 0.28);
+    display: inline-block;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    margin-bottom: 1.1rem;
+  }
+
+  h1.headline {
+    font-size: clamp(2.1rem, 4.4vw, 3.15rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    margin: 0 0 1.05rem;
+    text-wrap: balance;
+  }
+
+  h1.headline em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--accent), #ff9f43 55%, var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sub {
+    color: var(--text-dim);
+    font-size: 1.08rem;
+    line-height: 1.6;
+    max-width: 46ch;
+    margin: 0 0 2rem;
+  }
+
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: linear-gradient(100deg, var(--accent), #ff9f43);
+    color: #0b0e14;
+    font-weight: 700;
+    font-size: 0.96rem;
+    text-decoration: none;
+    padding: 0.8rem 1.3rem;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 30px -10px rgba(255, 107, 94, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -8px rgba(255, 107, 94, 0.6); }
+  .btn-primary svg { width: 17px; height: 17px; }
+
+  /* ---------- sample ---------- */
+
+  .sub code, .fields code, .note code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 0.1rem 0.4rem;
+    border-radius: 5px;
+  }
+
+  .sample {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 1.5rem;
+    align-items: start;
+    padding-bottom: 2rem;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+
+  .panel-head .status { color: var(--accent-2); }
+
+  pre.json {
+    margin: 0;
+    padding: 1.1rem 1.2rem 1.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  pre.json .k { color: var(--accent); }
+  pre.json .s { color: var(--text-dim); }
+  pre.json .n { color: var(--accent-2); }
+
+  .fields { margin: 0; padding: 0.4rem 1.2rem 0.6rem; }
+  .fields div { padding: 0.85rem 0; border-bottom: 1px solid var(--border); }
+  .fields div:last-child { border-bottom: 0; }
+  .fields dt { font-family: var(--font-mono); font-size: 0.86rem; font-weight: 600; margin: 0 0 0.3rem; }
+  .fields dd { margin: 0; color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; }
+
+  .note {
+    color: var(--text-faint);
+    font-size: 0.88rem;
+    line-height: 1.6;
+    max-width: 70ch;
+    margin: 0 0 1rem;
+  }
+
+  @media (max-width: 860px) {
+    .sample { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- footer ---------- */
+
+  footer.site {
+    padding: 3rem 0 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  footer.site .brand { font-size: 0.95rem; }
+  footer.site .fine {
+    font-size: 0.83rem;
+    color: var(--text-faint);
+  }
+
+  footer.site .fine a { color: var(--text-dim); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+
+  a.brand { text-decoration: none; color: inherit; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="site">
+    <div class="row">
+      <a class="brand" href="/"><span class="dot"></span>proto-sudoku</a>
+    </div>
+  </header>
+
+  <main>
+  <div class="hero">
+    <span class="eyebrow">api · sample response</span>
+    <h1 class="headline">One puzzle, <em>as the game receives it.</em></h1>
+    <p class="sub">Each time you press New Puzzle, the game fetches <code>/api/puzzle</code> and gets a fresh puzzle with a unique solution. The API serves only the game itself, so here is one response, saved, with what each field means.</p>
+  </div>
+
+  <div class="sample">
+    <div class="panel">
+      <div class="panel-head"><span>GET /api/puzzle</span><span class="status">200 · application/json</span></div>
+      <pre class="json">{
+  <span class="k">&quot;metrics&quot;</span>: {
+    <span class="k">&quot;counts&quot;</span>: {
+      <span class="k">&quot;blanks&quot;</span>: <span class="n">52</span>,
+      <span class="k">&quot;clues&quot;</span>: <span class="n">29</span>
+    }
+  },
+  <span class="k">&quot;puzzle&quot;</span>: <span class="s">&quot;4.9...6.....6.9.152...487...1......6.4..5..8.7......3...896...713.7.5.....7...8.1&quot;</span>,
+  <span class="k">&quot;ref&quot;</span>: <span class="s">&quot;NDU5MTczNjI4ODczNjI5NDE1MjYxNTQ4NzkzMzEyODk0NTc2OTQ2MzU3MTgyNzg1MjE2OTM0NTI4OTYxMzQ3MTM0Nzg1MjY5Njk3NDMyODUx&quot;</span>,
+  <span class="k">&quot;tag&quot;</span>: <span class="s">&quot;cloudflare&quot;</span>
+}</pre>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><span>fields</span></div>
+      <dl class="fields">
+        <div><dt>puzzle</dt><dd>81 characters, row by row from the top left. Digits are clues and dots are blanks.</dd></div>
+        <div><dt>ref</dt><dd>The solution as 81 digits, base64-encoded. The browser checks your entries against it, so Check needs no second request.</dd></div>
+        <div><dt>metrics.counts</dt><dd>How many cells are blank and how many are clues. The two always add up to 81.</dd></div>
+        <div><dt>tag</dt><dd>The platform that served the response: <code>"cloudflare"</code>.</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <p class="note">The solution ships with the puzzle on purpose: it's a casual game, and base64 only hides the answer from a glance. A request that doesn't come from the game page, such as a browser tab, another site or curl, gets a 404.</p>
+
+  <div class="cta-row">
+    <a class="btn-primary" href="/">Play now</a>
+    <a class="gh-link" href="/architecture">See the architecture</a>
+  </div>
+  </main>
+
+  <footer class="site">
+    <a class="brand" href="/"><span class="dot"></span>proto-sudoku</a>
+    <div class="fine"><a href="/">Play now</a> · <a href="/about">About</a> · <a href="/architecture">Architecture</a> · <a href="/llms.txt">llms.txt</a> · <a href="https://github.com/eswat2/proto-sudoku-cf">Source (AGPL-3.0)</a> · <a href="https://eswat2.app">eswat2.app</a></div>
+  </footer>
+</div>
+</body>
+</html>

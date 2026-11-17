@@ -575,7 +575,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
           <article class="card">
             <h3>Static assets</h3>
             <p class="meta">public/ · no Worker invocation</p>
-            <p>Any path that matches a file: the game page, <code>/about</code>, this page, <code>/llms.txt</code>, images and favicons. Most requests never run the Rust code.</p>
+            <p>Any path that matches a file: the game page, <code>/about</code>, this page, the sample response, <code>/llms.txt</code>, images and favicons. Most requests never run the Rust code.</p>
           </article>
           <article class="card">
             <h3>Worker</h3>
@@ -618,18 +618,18 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <div class="route-group">
               <p class="group-label">Pages</p>
               <div class="route-list">
-                <span class="route">/</span><span class="route">/about</span><span class="route">/architecture</span>
+                <span class="route">/</span><span class="route">/about</span><span class="route">/architecture</span><span class="route">/api-sample</span>
               </div>
             </div>
             <div class="route-group">
               <p class="group-label">Discovery — for LLMs &amp; agents, not the app itself</p>
               <div class="route-list">
-                <span class="route">/llms.txt</span><span class="route">/puzzle-sample.json</span>
+                <span class="route">/llms.txt</span>
               </div>
             </div>
           </div>
         </div>
-        <p class="layer-note" style="margin-top:16px;">The API is for the game page only. Its <code>fetch()</code> sends <code>Sec-Fetch-Site: same-origin</code>; a browser tab, another site or <code>curl</code> doesn't, and gets the same 404 page as any missing path (older browsers fall back to a same-host <code>Referer</code>). There are no CORS headers, so other sites can't read it either. Headers can be forged, so this keeps casual callers out rather than locking the door. To see the response shape, open <code>/puzzle-sample.json</code>, a saved copy.</p>
+        <p class="layer-note" style="margin-top:16px;">The API is for the game page only. Its <code>fetch()</code> sends <code>Sec-Fetch-Site: same-origin</code>; a browser tab, another site or <code>curl</code> doesn't, and gets the same 404 page as any missing path (older browsers fall back to a same-host <code>Referer</code>). There are no CORS headers, so other sites can't read it either. Headers can be forged, so this keeps casual callers out rather than locking the door. To see the response shape, the <a href="/api-sample">sample response</a> page shows a saved copy.</p>
       </div>
     </section>
 

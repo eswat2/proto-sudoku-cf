@@ -31,9 +31,12 @@ links in anything committed here: code, docs, commit messages.
 - No `run_worker_first`: a browser tab opening `/api/puzzle` is answered
   with `404.html` by the asset layer and never reaches the Worker. That's
   wanted; it was briefly added so tabs got JSON, then reverted.
-- `public/puzzle-sample.json`: a saved `/api/puzzle` response, linked from
-  About ("Sample response"), Architecture, `llms.txt` and the README in
-  place of the live API.
+- `public/api-sample.html` (`/api-sample`): a saved `/api/puzzle` response
+  shown as a page, styled like `404.html`, with what each field means. About
+  ("Sample response"), Architecture, `llms.txt` and the README link it in
+  place of the live API. It's a page, not a `.json` file, because a WAF rule
+  on the `eswat2.app` zone answers every `*.json` path (and `.php`, `.env`)
+  with a 403 before it reaches the Worker.
 - `public/`: everything the site serves. `index.html` is the game, `about.html` is
   styled like the poker and retro apps' about pages, `architecture.html`
   explains how it's built, and `llms.txt` describes the site and API for LLMs.
@@ -108,7 +111,7 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 
 - Keep the `/api/puzzle` JSON shape: `metrics.counts`, `puzzle`, `ref`, `tag`.
   The page and saved games depend on it. If it changes, regenerate
-  `public/puzzle-sample.json` and the examples in `llms.txt` and the README.
+  the JSON in `public/api-sample.html` and the examples in `llms.txt` and the README.
 - To call it locally: `curl -H 'Sec-Fetch-Site: same-origin' localhost:8787/api/puzzle`.
 - `metrics.nanos` was removed on purpose. Workers freezes the clock while
   code runs, so timers read 0, and `std::time::Instant` panics in wasm.

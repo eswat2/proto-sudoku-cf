@@ -3,7 +3,7 @@
 simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
 
 - [sudoku.eswat2.app][app] -- _the page, a single-file vanilla web component (no build, no dependencies)_
-- [sudoku.eswat2.app/puzzle-sample.json][app-sample] -- _a sample api response (the api itself answers only the page)_
+- [sudoku.eswat2.app/api-sample][app-sample] -- _a sample api response (the api itself answers only the page)_
 
 ## dependencies:
 
@@ -18,7 +18,7 @@ simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssem
 `npx wrangler dev`
 
 - [localhost:8787][local]
-- [localhost:8787/puzzle-sample.json][sample]
+- [localhost:8787/api-sample][sample]
 
 to deploy (builds locally, then uploads):
 
@@ -57,7 +57,7 @@ npx wrangler triggers deploy
 | `/architecture` | _`public/architecture.html`, styled like the poker and retro architecture pages_ |
 | `/llms.txt` | _`public/llms.txt`, notes for AI clients_ |
 | `/favicon.svg`, `/favicon.ico` | _the icon; the `.ico` is a 32px render of the svg_ |
-| `/puzzle-sample.json` | _a saved `/api/puzzle` response, to show its shape_ |
+| `/api-sample` | _`public/api-sample.html`, a saved `/api/puzzle` response with what each field means_ |
 | `/api/puzzle` | _a new puzzle and its solution, for the page only: other callers get the 404 page_ |
 | any other path | _404, with `public/404.html` as the body, `no-store` and `noindex`_ |
 
@@ -167,7 +167,7 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 
 
 [app]: https://sudoku.eswat2.app
-[app-sample]: https://sudoku.eswat2.app/puzzle-sample.json
+[app-sample]: https://sudoku.eswat2.app/api-sample
 [proto-sudoku-wc]: https://www.npmjs.com/package/proto-sudoku-wc
 [workers-rs]: https://github.com/cloudflare/workers-rs
 [worker]: https://crates.io/crates/worker
@@ -178,7 +178,7 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 [rust-sudoku-api]: https://github.com/eswat2/rust-sudoku-api
 [criterion]: https://crates.io/crates/criterion
 [local]: http://localhost:8787
-[sample]: http://localhost:8787/puzzle-sample.json
+[sample]: http://localhost:8787/api-sample
 [puzzle-io]: https://sudoku-rust-api.vercel.app/api/puzzle
 
 [out-dated]: https://github.com/kbknapp/cargo-outdated

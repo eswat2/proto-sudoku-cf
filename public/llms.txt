@@ -13,6 +13,8 @@ file instead of scraping it.
 - [Play](https://sudoku.eswat2.app/): the game
 - [About](https://sudoku.eswat2.app/about): how to play, with screenshots
 - [Architecture](https://sudoku.eswat2.app/architecture): how it's built, layer by layer
+- [Sample response](https://sudoku.eswat2.app/api-sample): a saved API response,
+  field by field
 
 ## How it works
 
@@ -27,8 +29,8 @@ file instead of scraping it.
 The game fetches `GET /api/puzzle`, a new puzzle with a unique solution on
 every call. It answers only the game page (same-origin `fetch`); a direct
 request, from a browser tab, another site or curl, gets a 404, and there are
-no CORS headers. A saved copy of a response is at
-[/puzzle-sample.json](https://sudoku.eswat2.app/puzzle-sample.json):
+no CORS headers. A saved response, field by field, is on the
+[Sample response](https://sudoku.eswat2.app/api-sample) page. Its shape:
 
 ```
 {
