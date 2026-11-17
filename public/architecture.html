@@ -531,7 +531,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
       <dl>
         <dt>name</dt><dd>→ proto-sudoku-cf</dd>
         <dt>main</dt><dd>→ build/index.js + index_bg.wasm</dd>
-        <dt>assets</dt><dd>→ ./public (served first, except /api/*)</dd>
+        <dt>assets</dt><dd>→ ./public (served first)</dd>
         <dt>routes</dt><dd>→ sudoku.eswat2.app (custom domain)</dd>
         <dt>dev port</dt><dd>→ :8787 (wrangler dev)</dd>
       </dl>
@@ -580,7 +580,7 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
           <article class="card">
             <h3>Worker</h3>
             <p class="meta">build/index.js · ~300 KB wasm</p>
-            <p><code>/api/*</code>, which goes to the Worker first, and everything without a matching file. A small JS shim from <code>worker-build</code> loads the wasm module and hands it each request.</p>
+            <p>Everything without a matching file. A small JS shim from <code>worker-build</code> loads the wasm module and hands it each request.</p>
           </article>
           <article class="card">
             <h3>Local</h3>
@@ -603,13 +603,13 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <div class="route-group">
               <p class="group-label">One route does the work</p>
               <div class="route-list">
-                <span class="route">GET /api/puzzle</span><span class="route">OPTIONS *</span>
+                <span class="route">GET /api/puzzle · from the page</span>
               </div>
             </div>
             <div class="route-group">
               <p class="group-label">Everything else — a real 404</p>
               <div class="route-list">
-                <span class="route">/api/* → JSON 404</span><span class="route">/* → 404 page</span><span class="route">POST etc. → 405</span>
+                <span class="route">/api/puzzle elsewhere → 404 page</span><span class="route">/* → 404 page</span><span class="route">POST etc. → 405</span>
               </div>
             </div>
           </div>
@@ -624,12 +624,12 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
             <div class="route-group">
               <p class="group-label">Discovery — for LLMs &amp; agents, not the app itself</p>
               <div class="route-list">
-                <span class="route">/llms.txt</span>
+                <span class="route">/llms.txt</span><span class="route">/puzzle-sample.json</span>
               </div>
             </div>
           </div>
         </div>
-        <p class="layer-note" style="margin-top:16px;">Every Worker response — 404s and <code>OPTIONS</code> preflights included — gets permissive CORS headers in one place after routing (<code>Access-Control-Allow-Origin: *</code>, methods <code>GET,OPTIONS</code>), so any page can call the API. There is no key and no rate limit.</p>
+        <p class="layer-note" style="margin-top:16px;">The API is for the game page only. Its <code>fetch()</code> sends <code>Sec-Fetch-Site: same-origin</code>; a browser tab, another site or <code>curl</code> doesn't, and gets the same 404 page as any missing path (older browsers fall back to a same-host <code>Referer</code>). There are no CORS headers, so other sites can't read it either. Headers can be forged, so this keeps casual callers out rather than locking the door. To see the response shape, open <code>/puzzle-sample.json</code>, a saved copy.</p>
       </div>
     </section>
 
@@ -643,11 +643,10 @@ footer.note a { color: inherit; text-underline-offset: 3px; }
           <div class="fn-group">
             <p class="group-label">Handlers</p>
             <ul class="fn-list">
-              <li><code>fetch()</code> <span class="fn-note">— the router, then CORS</span></li>
+              <li><code>fetch()</code> <span class="fn-note">— the router</span></li>
               <li><code>puzzle()</code> <span class="fn-note">— builds the JSON</span></li>
-              <li><code>not_found_json()</code> <span class="fn-note">— /api 404s</span></li>
+              <li><code>from_the_page()</code> <span class="fn-note">— Sec-Fetch-Site check</span></li>
               <li><code>not_found_page()</code> <span class="fn-note">— the 404 page</span></li>
-              <li><code>with_cors()</code></li>
             </ul>
           </div>
           <div class="fn-group">

@@ -28,20 +28,25 @@ pub fn new_puzzle() -> Puzzle {
     Puzzle { puzzle, solution, blanks }
 }
 
-fn with_cors(mut resp: Response) -> Result<Response> {
-    let h = resp.headers_mut();
-    h.set("Access-Control-Allow-Origin", "*")?;
-    h.set("Access-Control-Allow-Headers", "*")?;
-    h.set("Access-Control-Allow-Methods", "GET,OPTIONS")?;
-    Ok(resp)
+// The API is for the game page only. A browser's fetch() from the page
+// sends `Sec-Fetch-Site: same-origin`; a tab, another site or curl doesn't.
+// Browsers too old to send Sec-Fetch-* fall back to a same-host Referer.
+// Headers can be forged, so this keeps casual callers out; it isn't auth.
+fn from_the_page(req: &Request) -> bool {
+    let h = req.headers();
+    match h.get("Sec-Fetch-Site").ok().flatten() {
+        Some(site) => site == "same-origin",
+        None => {
+            let host = req.url().ok().and_then(|u| u.host_str().map(str::to_owned));
+            let referer = h.get("Referer").ok().flatten().and_then(|r| Url::parse(&r).ok());
+            matches!((host, referer), (Some(host), Some(r)) if r.host_str() == Some(host.as_str()))
+        }
+    }
 }
 
-fn not_found_json() -> Result<Response> {
-    Ok(Response::from_json(&json!({ "error": "not found" }))?.with_status(404))
-}
-
-// Any path that isn't a file in public/ or /api/puzzle gets a real 404, so a
-// probe like /env.js doesn't look like something that exists. The body is
+// Any path that isn't a file in public/, and any API call that didn't come
+// from the page, gets a real 404, so a probe like /env.js or a direct
+// request for /api/puzzle doesn't look like something that exists. The body is
 // public/404.html, which the assets binding serves for a missing path
 // (not_found_handling in wrangler.jsonc).
 async fn not_found_page(req: &Request, env: &Env) -> Result<Response> {
@@ -71,20 +76,18 @@ fn puzzle() -> Result<Response> {
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
-    let path = req.path();
-    let resp = match req.method() {
-        Method::Options => Response::empty()?,
+    match req.method() {
         Method::Get | Method::Head => {
-            if path == "/api/puzzle" {
-                puzzle()?
-            } else if path == "/api" || path.starts_with("/api/") {
-                not_found_json()?
+            if req.path() == "/api/puzzle" && from_the_page(&req) {
+                puzzle()
             } else {
-                not_found_page(&req, &env).await?
+                not_found_page(&req, &env).await
             }
         }
-        _ => Response::empty()?.with_status(405),
-    };
-    // One place for CORS, so 404s and 405s get the headers too.
-    with_cors(resp)
+        _ => {
+            let mut resp = Response::empty()?.with_status(405);
+            resp.headers_mut().set("Allow", "GET, HEAD")?;
+            Ok(resp)
+        }
+    }
 }

@@ -5,8 +5,8 @@
 > to WebAssembly on Cloudflare Workers.
 
 The page at / is a single-file web component (`<proto-sudoku>`, plain
-JavaScript, no build) and renders nothing useful without JavaScript. Use this file or the
-API instead of scraping it.
+JavaScript, no build) and renders nothing useful without JavaScript. Use this
+file instead of scraping it.
 
 ## Pages
 
@@ -24,8 +24,11 @@ API instead of scraping it.
 
 ## API
 
-- [GET /api/puzzle](https://sudoku.eswat2.app/api/puzzle): a new puzzle with a
-  unique solution on every call. CORS is open to any origin.
+The game fetches `GET /api/puzzle`, a new puzzle with a unique solution on
+every call. It answers only the game page (same-origin `fetch`); a direct
+request, from a browser tab, another site or curl, gets a 404, and there are
+no CORS headers. A saved copy of a response is at
+[/puzzle-sample.json](https://sudoku.eswat2.app/puzzle-sample.json):
 
 ```
 {

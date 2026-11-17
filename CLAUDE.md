@@ -19,17 +19,21 @@ links in anything committed here: code, docs, commit messages.
 
 ## Layout
 
-- `src/lib.rs`: the whole Worker. It answers `/api/puzzle` and OPTIONS on
-  any path. Any other `/api` path is a JSON 404, any other path a 404 with
+- `src/lib.rs`: the whole Worker. It answers `/api/puzzle`, but only to
+  the game page: `from_the_page()` wants `Sec-Fetch-Site: same-origin`, or
+  a same-host `Referer` from browsers without Sec-Fetch-*. Anything else (a
+  tab, another site, plain curl, any other path) gets a 404 with
   `public/404.html` as the body (`not_found_handling` in `wrangler.jsonc`),
-  and methods other than GET, HEAD and OPTIONS get 405. CORS headers go on
-  every response. The old `/:name` greeting route was removed because it
+  and methods other than GET and HEAD get 405. There are no CORS headers.
+  The API was public with open CORS until it was made page-only on purpose;
+  don't reopen it. The old `/:name` greeting route was removed because it
   answered 200 to every scanner probe.
-- `run_worker_first: ["/api/*"]` in `wrangler.jsonc` is needed. Without it,
-  a browser navigation (`Sec-Fetch-Mode: navigate`) that misses an asset is
-  answered with `404.html` by the asset layer and never reaches the Worker,
-  so opening `/api/puzzle` in a tab showed the 404 page while `fetch` and
-  curl got JSON.
+- No `run_worker_first`: a browser tab opening `/api/puzzle` is answered
+  with `404.html` by the asset layer and never reaches the Worker. That's
+  wanted; it was briefly added so tabs got JSON, then reverted.
+- `public/puzzle-sample.json`: a saved `/api/puzzle` response, linked from
+  About ("Sample response"), Architecture, `llms.txt` and the README in
+  place of the live API.
 - `public/`: everything the site serves. `index.html` is the game, `about.html` is
   styled like the poker and retro apps' about pages, `architecture.html`
   explains how it's built, and `llms.txt` describes the site and API for LLMs.
@@ -103,7 +107,9 @@ The build needs the wasm target (`rustup target add wasm32-unknown-unknown`).
 ## The API
 
 - Keep the `/api/puzzle` JSON shape: `metrics.counts`, `puzzle`, `ref`, `tag`.
-  The page, `llms.txt` and outside callers depend on it.
+  The page and saved games depend on it. If it changes, regenerate
+  `public/puzzle-sample.json` and the examples in `llms.txt` and the README.
+- To call it locally: `curl -H 'Sec-Fetch-Site: same-origin' localhost:8787/api/puzzle`.
 - `metrics.nanos` was removed on purpose. Workers freezes the clock while
   code runs, so timers read 0, and `std::time::Instant` panics in wasm.
   Timings live in `cargo bench`.

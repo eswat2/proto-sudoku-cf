@@ -3,7 +3,7 @@
 simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssembly (via [workers-rs][workers-rs])...
 
 - [sudoku.eswat2.app][app] -- _the page, a single-file vanilla web component (no build, no dependencies)_
-- [sudoku.eswat2.app/api/puzzle][app-puzzle] -- _the api_
+- [sudoku.eswat2.app/puzzle-sample.json][app-sample] -- _a sample api response (the api itself answers only the page)_
 
 ## dependencies:
 
@@ -18,7 +18,7 @@ simple sudoku api implemented in Rust, running on Cloudflare Workers as WebAssem
 `npx wrangler dev`
 
 - [localhost:8787][local]
-- [localhost:8787/api/puzzle][puzzle]
+- [localhost:8787/puzzle-sample.json][sample]
 
 to deploy (builds locally, then uploads):
 
@@ -57,11 +57,17 @@ npx wrangler triggers deploy
 | `/architecture` | _`public/architecture.html`, styled like the poker and retro architecture pages_ |
 | `/llms.txt` | _`public/llms.txt`, notes for AI clients_ |
 | `/favicon.svg`, `/favicon.ico` | _the icon; the `.ico` is a 32px render of the svg_ |
-| `/api/puzzle` | _a new puzzle and its solution_ |
-| any other `/api` path | _404, `{"error": "not found"}`_ |
+| `/puzzle-sample.json` | _a saved `/api/puzzle` response, to show its shape_ |
+| `/api/puzzle` | _a new puzzle and its solution, for the page only: other callers get the 404 page_ |
 | any other path | _404, with `public/404.html` as the body, `no-store` and `noindex`_ |
 
-static files win over the Worker: any path matching a file in `public/` never runs the Rust code. methods other than `GET`, `HEAD` and `OPTIONS` get 405. every Worker response carries permissive CORS headers, including 404s, 405s and `OPTIONS` preflights.
+static files win over the Worker: any path matching a file in `public/` never runs the Rust code. methods other than `GET` and `HEAD` get 405.
+
+`/api/puzzle` answers only a same-origin `fetch()` from the page, which browsers mark with `Sec-Fetch-Site: same-origin` (older browsers fall back to a same-host `Referer`). a browser tab, another site or plain `curl` gets the 404 page, and there are no CORS headers. headers can be forged, so this keeps casual callers out; it is not authentication. to try it locally:
+
+```
+curl -s -H 'Sec-Fetch-Site: same-origin' localhost:8787/api/puzzle
+```
 
 ## output:
 
@@ -161,7 +167,7 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 
 
 [app]: https://sudoku.eswat2.app
-[app-puzzle]: https://sudoku.eswat2.app/api/puzzle
+[app-sample]: https://sudoku.eswat2.app/puzzle-sample.json
 [proto-sudoku-wc]: https://www.npmjs.com/package/proto-sudoku-wc
 [workers-rs]: https://github.com/cloudflare/workers-rs
 [worker]: https://crates.io/crates/worker
@@ -172,7 +178,7 @@ repo, linked from the footer of [sudoku.eswat2.app/about][about], is that offer.
 [rust-sudoku-api]: https://github.com/eswat2/rust-sudoku-api
 [criterion]: https://crates.io/crates/criterion
 [local]: http://localhost:8787
-[puzzle]: http://localhost:8787/api/puzzle
+[sample]: http://localhost:8787/puzzle-sample.json
 [puzzle-io]: https://sudoku-rust-api.vercel.app/api/puzzle
 
 [out-dated]: https://github.com/kbknapp/cargo-outdated
